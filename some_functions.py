@@ -17,6 +17,11 @@ def get_numbers_from_input(prompt="", minimum: int = None, maximum: int = None, 
                     else:
                         number = int((user_input[last_comma + 1:i]))
 
+                    if choice_amount:
+                        if len(numbers)+1 > choice_amount:
+                            print("you entered too many numbers")
+                            raise ValueError
+
                     # checks that it is within the range provided (could be made more efficient)
                     if minimum:
                         if not minimum <= number:
@@ -33,10 +38,7 @@ def get_numbers_from_input(prompt="", minimum: int = None, maximum: int = None, 
                                 print("you entered two of the same number")
                                 raise ValueError
 
-                    if choice_amount:
-                        if len(numbers) > choice_amount:
-                            print("you entered too many numbers")
-                            raise ValueError
+
 
                     numbers.append(number)
                     last_comma = i
