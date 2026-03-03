@@ -1,3 +1,4 @@
+from __future__ import annotations
 import random
 from operator import attrgetter
 
@@ -11,8 +12,19 @@ class Move:
     def __str__(self):
         return self.name
 
+    def use(self, user: Pokemon, target: Pokemon):
+        print(f"{user.name} used {self.name}")
+        if random.random() <= self.accuracy:
+            print(f"hit!\n"
+                  f"{target.name} took {self.damage} damage")
+            return self.damage
+        else:
+            print("Oh no! you missed!")
+            return None
+
+
 class Pokemon:
-    def __init__(self, name: str, types: list, level: int, hp_mod: int, moveset: list = []):
+    def __init__(self, name: str, types: list, hp_mod: int, moveset: list    ,level: int ):
         self.name = name
         self.types = types
         self.level = level
@@ -46,12 +58,14 @@ moves = [
     Move("ember", 40, 1, "fire")
 ]
 
-all_pokemon = [
-    Pokemon("zubat", ["flying", "dark"], random.randint(1, 3), random.randint(10, 20), get_moves(moves, ["wing attack", "bite"])),
-    Pokemon("snorlax", ["normal"], random.randint(1,3), random.randint(40, 70), get_moves(moves, ["headbutt", "body slam"])),
-    Pokemon("pikachu", ["electric"], random.randint(1, 3), random.randint(20, 40), get_moves(moves, ["thunder shock", "quick attack"])),
-    Pokemon("bulbasaur", ["grass", "poison"], random.randint(1, 3), random.randint(20, 40), get_moves(moves, ["vine whip", "tackle"])),
-    Pokemon("squirtle", ["water"], random.randint(1,3), random.randint(20, 40), get_moves(moves, ["water gun", "tackle"])),
-    Pokemon("charmander", ["fire"], random.randint(1,3), random.randint(20, 40), get_moves(moves, ["ember", "tackle"]))
+pokemon_data = [
+    ("zubat", ["flying", "dark"], 10, get_moves(moves, ["wing attack", "bite"])),
+    ("snorlax", ["normal"], 70, get_moves(moves, ["headbutt", "body slam"])),
+    ("pikachu", ["electric"], 20, get_moves(moves, ["thunder shock", "quick attack"])),
+    ("bulbasaur", ["grass", "poison"], 30, get_moves(moves, ["vine whip", "tackle"])),
+    ("squirtle", ["water"], 25, get_moves(moves, ["water gun", "tackle"])),
+    ("charmander", ["fire"], 20, get_moves(moves, ["ember", "tackle"]))
 ]
+
+
 
