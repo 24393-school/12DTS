@@ -101,7 +101,7 @@ def battle(enemy_pokemon: dictionary.Pokemon, own_pokemon_roster: list, own_inve
                 active_pokemon = switch_choice
 
             else:
-                print("all of you pokemon have fainted! you have lost :{")
+                print("all of you pokemon have ! you have lost :{")
                 return 0  # 0 will be a 'lose' flag
 
 
