@@ -1,8 +1,44 @@
 from __future__ import annotations
+
 import random
 from operator import attrgetter
 
 
+# class for types, for pokemon and moves. Can find effectiveness against other types. WIP
+class Type:
+    def __init__(
+        self, name: str, super_effective: list, not_effective: list, no_effect: list
+    ):
+        self.name = name
+        self.super_effective = super_effective
+        self.not_effective = not_effective
+        self.no_effect = no_effect
+
+    def __str__(self):
+        return self.name
+
+    # this finds the move's effectiveness against a target of given types
+    def effectiveness(self, other_types: list):
+        effectiveness = 1
+        for type in other_types:
+            if type.name in self.super_effective:
+                effectiveness *= 2
+            elif type.name in self.not_effective:
+                effectiveness *= 0.5
+            elif type.name in self.no_effect:
+                effectiveness *= 0
+        if effectiveness > 1:
+            print("it's super effective!")
+        elif 0 < effectiveness < 1:
+            print("it's not very effective...")
+
+        elif effectiveness == 0:
+            print("it has no effect...")
+
+        return effectiveness
+
+
+# a class for moves, currently only supports attack moves with no special effects, but has a type
 class Move:
     def __init__(self, name: str, damage: int, accuracy: int, type):
         self.name = name
@@ -13,6 +49,7 @@ class Move:
     def __str__(self):
         return self.name
 
+    # checks for accuracy, and if hits, applies damage to the target. Need to add type effectiveness logic
     def use(self, user: Pokemon, target: Pokemon):
         print(f"{user.name} used {self.name}")
         if random.random() <= self.accuracy:
@@ -21,7 +58,6 @@ class Move:
 
         else:
             print("Oh no! you missed!")
-            return None
 
 
 # a class for any pokemon, with a name, level, and basic hp multiplier. Also has moveset, types and hp. Need to add attack, defence, and speed stats, and possibly even correct scaling logic based on level for stats
@@ -62,33 +98,15 @@ class Healing_Item(Item):
         self.power = power
 
     def use(self, target: Pokemon):
-        super().use()
         target.hp += self.power
         print(f"{target.name} recovered {self.power} hp")
-        return Pokemon
 
 
-def get_moves(all_moves: list, wanted_moves: list):
-    moves = []
-
-    for move in wanted_moves:
-        moves.append(next((m for m in all_moves if m.name == move), None))
-
-    return moves
-
-
-moves = [
-    Move("wing attack", 60, 1, "flying"),
-    Move("bite", 60, 1, "normal"),
-    Move("headbutt", 70, 1, "normal"),
-    Move("body slam", 85, 1, "normal"),
-    Move("thunder shock", 40, 1, "lightning"),
-    Move("quick attack", 40, 1, "normal"),
-    Move("vine whip", 45, 1, "grass"),
-    Move("tackle", 40, 1, "normal"),
-    Move("water gun", 40, 1, "water"),
-    Move("scratch", 40, 1, "normal"),
-    Move("ember", 40, 1, "fire")
+# dataset for all types, unfinished
+Types = [
+    Type("normal", [], ["rock", "steel"], ["ghost"]),
+    Type("fire", ["grass", "ice", "bug", "steel"], ["fire", "water", "rock", "dragon"], []),
+    Type("water", ["fire", "ground", "rock"], ["water", "grass", "dragon"], []),
 ]
 
 # dataset for moves. will add more when they are needed
