@@ -13,6 +13,11 @@ class Type:
         self.super_effective = super_effective
         self.not_effective = not_effective
         self.no_effect = no_effect
+    
+    def __eq__(self, other):
+        if self.name == other.name:
+            return True
+        return False
 
     def __str__(self):
         return self.name
@@ -103,14 +108,29 @@ class Healing_Item(Item):
 
 
 # dataset for all types, unfinished
-Types = [
-    Type("normal", [], ["rock", "steel"], ["ghost"]),
-    Type("fire", ["grass", "ice", "bug", "steel"], ["fire", "water", "rock", "dragon"], []),
-    Type("water", ["fire", "ground", "rock"], ["water", "grass", "dragon"], []),
-]
+TYPES = {
+    "normal": Type("normal", [], ["rock", "steel"], ["ghost"]),
+    "fire": Type("fire", ["grass", "ice", "bug", "steel"], ["fire", "water", "rock", "dragon"], []),
+    "water": Type("water", ["fire", "ground", "rock"], ["water", "grass", "dragon"], []),
+    "grass": Type("grass", ["water", "ground", "rock"], ["fire", "grass", "poison", "flying", "bug", "dragon", "steel"], []),
+    "electric": Type("electric", ["water", "flying"], ["grass", "electric", "dragon"], ["ground"]),
+    "ice": Type("ice", ["grass", "ground", "flying", "dragon"], ["fire", "water", "ice", "steel"], []),
+    "fighting": Type("fighting", ["normal", "ice", "rock", "dark", "steel"], ["poison", "flying", "psychic", "bug", "fairy"], []),
+    "poison": Type("poison", ["grass", "fairy"], ["poison", "ground", "rock", "ghost"], ["steel"]),
+    "ground": Type("ground", ["fire", "electric", "poison", "rock", "steel"], ["grass", "bug"], ["ground"]),
+    "flying": Type("flying", ["grass", "fighting", "bug"], ["electric", "rock", "steel"], []),
+    "pyschic": Type("psychic", ["fighting", "poison"], ["psychic", "steel"], ["dark"]),
+    "bug": Type("bug", ["grass", "psychic", "dark"], ["fire", "fighting", "poison", "flying", "ghost", "steel", "fairy"], []),
+    "rock": Type("rock", ["fire", "ice", "flying", "bug"], ["fighting", "ground", "steel"], []),
+    "ghost": Type("ghost", ["ghost", "psychic"], ["dark"], ["normal"]),
+    "dragon": Type("dragon", ["dragon"], ["steel"], ["fairy"]),
+    "dark": Type("dark", ["psychic", "ghost"], ["dark", "fairy"], []),
+    "steel": Type("steel", ["ice", "rock", "fairy"], ["fire", "water", "grass", "steel"], []),
+    "fairy": Type("fairy", ["fighting", "dragon", "dark"], ["fire", "poison", "steel"], []),
+}
 
 # dataset for moves. will add more when they are needed
-moves = {
+MOVES = {
     "wing attack": Move("wing attack", 60, 1, "flying"),
     "bite": Move("bite", 60, 1, "normal"),
     "headbutt": Move("headbutt", 70, 1, "normal"),
@@ -126,12 +146,12 @@ moves = {
 
 # dataset for pokemon. Need to add a lot more
 pokemon_data = {
-    "zubat": ("zubat", ["flying", "dark"], 10, [moves["wing attack"], moves["bite"]]),
-    "snorlax": ("snorlax", ["normal"], 70, [moves["headbutt"], moves["body slam"]]),
-    "pikachu": ("pikachu", ["electric"], 20, [moves["thunder shock"], moves["quick attack"]]),
-    "bulbasaur": ("bulbasaur", ["grass", "poison"], 30, [moves["vine whip"], moves["tackle"]]),
-    "squirtle": ("squirtle", ["water"], 25, [moves["water gun"], moves["tackle"]]),
-    "charmander": ("charmander", ["fire"], 20, [moves["ember"], moves["tackle"]]),
+    "zubat": ("zubat", ["flying", "dark"], 10, [MOVES["wing attack"], MOVES["bite"]]),
+    "snorlax": ("snorlax", ["normal"], 70, [MOVES["headbutt"], MOVES["body slam"]]),
+    "pikachu": ("pikachu", ["electric"], 20, [MOVES["thunder shock"], MOVES["quick attack"]]),
+    "bulbasaur": ("bulbasaur", ["grass", "poison"], 30, [MOVES["vine whip"], MOVES["tackle"]]),
+    "squirtle": ("squirtle", ["water"], 25, [MOVES["water gun"], MOVES["tackle"]]),
+    "charmander": ("charmander", ["fire"], 20, [MOVES["ember"], MOVES["tackle"]]),
 }
 
 # dataset for healing items. Will add more later
