@@ -1,7 +1,9 @@
 import random
+import time
+
+import some_functions.py
 
 import dictionary
-import some_functions
 
 wild_pokemon = []
 
@@ -14,7 +16,7 @@ def battle(
     enemy_pokemon: dictionary.Pokemon, own_pokemon_roster: list, own_inventory: list
 ):
     # declairs the pokemon's stats
-    print(f"A wild {enemy_pokemon.name} has appeared!")
+    print(f"A wild level {enemy_pokemon.level} {enemy_pokemon.name} has appeared!")
     if len(enemy_pokemon.types) != 1:
         print(
             f"It is a {enemy_pokemon.types[0]} and {enemy_pokemon.types[1]} type pokemon"
@@ -99,6 +101,8 @@ def battle(
                 active_pokemon = switch_choice
 
         # enemy tun
+        time.sleep(1)
+        print("enemy turn!")
         enemy_move = enemy_pokemon.moveset[
             random.randint(0, len(enemy_pokemon.moveset) - 1)
         ]
