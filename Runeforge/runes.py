@@ -16,8 +16,8 @@ def isaz_effect(arcana, mask):
     return 10, "blue"
 
 
-def sōwulō_effect():
-    pass
+def sōwulō_effect(arcana, mask):
+    return arcana, mask
 
 # class for enhancements for rune. Going to give bonuses or abilities etc
 class Enhancement:
@@ -89,7 +89,7 @@ class Runestone:
         try:
             face = self.runes[random.randint(0, self.sides - 1)]
             print(
-                f"it lands on the glyph {face.glyph}\nThe rune {face.name}\nThe rune begins to glow with {face.colour} power..."
+                f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with {face.colour} power..."
             )
             face.activate(arcana, self.mask)
 
@@ -100,7 +100,12 @@ class Runestone:
         return self.info
 
 
-
+def runestone_explain(runestones):
+    for runestone, i in zip(runestones, range(len(runestones))):
+        if runestone.nickname:
+            print(f"{i + 1}. {runestone.nickname}: A {runestone}")
+        else:
+            print(f"{i + 1}. A {runestone}")
 
 
 
