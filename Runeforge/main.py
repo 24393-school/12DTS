@@ -25,7 +25,7 @@ def battle(
     runestone_choices = []
     while not runestone_choices:
         print(
-            f"Choose up to {user_runestone_capacity} runestones from your bag. Enter ? for more detail:"  # ? here gives the full
+            f"Choose up to {user_runestone_capacity} runestones from your bag. Enter ? for more detail:"  # ? here gives the full description
         )
         for runestone, i in zip(user_runestones, range(len(user_runestones))):
             if runestone.nickname:
@@ -65,6 +65,7 @@ def battle(
                 else:
                     print("that is not a yes or a no!")
 
+            p
 
 if __name__ == "__main__":
     battle(
