@@ -2,6 +2,7 @@ import runes
 import some_functions_copy
 
 
+# r
 # For use later to hold the player's stuff
 class Player:
     def __init__(self, runestone_bag: list = [runes.Runestone]) -> None:
