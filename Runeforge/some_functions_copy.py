@@ -11,7 +11,7 @@ def get_numbers_from_input(
         try:
             user_input = input(prompt)
             if user_input == exception:
-                return True
+                return user_input
 
             last_comma = -1
             numbers = []
