@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import random
 import typing
+from profile import run
+
+STRING_FORMMATING_TABLE = str.maketrans("", "", "[]'")
 
 
 # class for enhancements for rune. Going to give bonuses or abilities etc
@@ -14,6 +17,10 @@ class Enhancement:
 
 # this will be what is on a side of a runestone. It will give points and have an effect on trigger. The colour is for synergies
 class Rune:
+    @classmethod
+    def create_rune(cls, type) -> Rune:
+        return Rune(*RUNE_TYPE_DATA[type])
+
     def __init__(
         self,
         name: str,
@@ -37,12 +44,27 @@ class Rune:
 
 # this will be the "die" that the runes ar own. it will be rolled to get a rune
 class Runestone:
+    @classmethod
+    def create_runestone(cls, type, rune_overide: list = None) -> Runestone:
+        if not rune_overide:
+            return Runestone(*RUNESTONE_TYPE_DATA[type])
+        else:
+            return Runestone(
+                RUNESTONE_TYPE_DATA[type][0], RUNESTONE_TYPE_DATA[type][1], rune_overide
+            )
+
     def __init__(self, material: str, sides: int, runes: list[Rune]):
         self.material = material
         self.sides = sides
         self.runes = runes
         self.mask = ""
-        self.nickname = input("enter a nickname for your runestone for ease of use")
+        self.info = f"{self.sides}-sided {self.material} runestone, with the runes {([r.name for r in self.runes])}".translate(
+            STRING_FORMMATING_TABLE
+        )
+        self.nickname = input(f"enter a nickname for your {self.info} for ease of use ")
+        ## self.info = f"A {self.sides}-sided {self.material} runestone, with the runes {([r.name for r in self.runes])}. Its nickname is {self.nickname}".translate(
+        ##     STRING_FORMMATING_TABLE
+        ## )
 
     def throw(self, arcana):
         print("you toss the runestone high into the air...")
@@ -57,12 +79,10 @@ class Runestone:
             print("it comes up blank")
 
     def __str__(self) -> str:
-        return f"A {self.sides}-sided {self.material} runestone, with the runes {([r.name for r in self.runes])}".translate(
-            STRING_FORMMATING_TABLE
-        )
+        return self.info
 
 
-# this is going to be all of the rune abilities here
+# this is going to be all of the rune abilities here. they will take, and return the game state, just mutatating it
 def isaz_effect(arcana, mask):
     print(
         "Ice forms over all of your runestones, and snow begins to fly in the air... +10 arcana, and all other "
@@ -71,23 +91,19 @@ def isaz_effect(arcana, mask):
     return 10, "blue"
 
 
-def create_rune(rune_name):
-    return Rune(*RUNE_DATA[rune_name])
-
-
 def sōwulō_effect():
     pass
 
 
-RUNE_DATA = {
+RUNE_TYPE_DATA = {
     "isaz": ("isaz", "ᛁ", "blue", "turns all your runes blue this round", isaz_effect),
     "sōwulō": ("sōwulō", "ᛊ", "yellow", "", sōwulō_effect),
 }
 
-STRING_FORMMATING_TABLE = str.maketrans("", "", "[]'")
+RUNESTONE_TYPE_DATA = {"base": ("stone", 3, [])}
 
-x = create_rune("isaz")
+# x = create_rune("isaz")
 
-die = Runestone("none", 2, [x, x])
+# die = Runestone("none", 2, [x, x])
 
-print(die)
+# print(die)
