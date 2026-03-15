@@ -1,7 +1,7 @@
 import random
 import time
 
-import some_functions.py
+import some_functions
 
 import dictionary
 
