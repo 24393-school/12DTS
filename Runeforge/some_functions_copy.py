@@ -32,10 +32,12 @@ def get_numbers_from_input(
                     # checks that it is within the range provided (could be made more efficient)
                     if minimum:
                         if not minimum <= number:
+                            print("out of range!")
                             raise ValueError
 
                     if maximum:
                         if not number <= maximum:
+                            print("out of range!")
                             raise ValueError
 
                     # checks for duplicate numbers, if that is enabled
