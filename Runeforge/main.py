@@ -3,6 +3,9 @@ import runes
 import some_functions_copy
 import random, time, sys
 
+class Enemy:
+    def __init__(self, name):
+        self.name = name
 
 # For use later to hold the player's stuff
 class Player:
@@ -42,32 +45,30 @@ def choose_runes(user_runestones, user_runestone_capacity):
 def battle(
         user_runestones: list[runes.Runestone],
         user_runestone_capacity: int,
-        enemy_runestones: list[runes.Runestone],
-        enemy_name: str,
+        enemy: Enemy
 ):
-    print(f"An enemy approaches: a mighty {enemy_name}")
+    print(f"An enemy approaches: a mighty {enemy.name}")
     print("they draw their runestones")
     print("so do you")
 
     # selection phase for the turn. In this part, the player chooses which of their runestones they will use
-    arcana = 0
+    player_arcana = 0
+
     runestone_choices = choose_runes(user_runestones, user_runestone_capacity)
 
     while True:
-        runestone_confirmation = input("is this your choice? - y/n ")
+        runestone_confirmation = some_functions_copy.get_confirmation()
 
-        if runestone_confirmation == ("y" or "yes"):
+        if runestone_confirmation:
             print("runestones selected")
             break
 
-        elif runestone_confirmation == ("n" or "no"):
+        else:
             print("All right. Choose again")
             runestone_choices = choose_runes(user_runestones, user_runestone_capacity)
 
-        else:
-            print("that is not a yes or a no!")
-
-    print("you draw your runestones from your bag... which would you like to throw first?")
+    print("you draw your runestones from your bag... which would you like to throw first? Press ? for more info, "
+          "and type 'end' to end your throw phase")
 
     for runestone, i in zip(runestone_choices, range(len(runestone_choices))):
         if runestone.nickname:
@@ -75,17 +76,30 @@ def battle(
         else:
             print(f"{i + 1}. {runestone}")
 
-    while True:
-        user_input = some_functions_copy.get_numbers_from_input(
-            "", 1, len(runestone_choices), False, 1, "?"
-        )[0]
+    # choose the stones to throw(in order)
+    for i in range(len(runestone_choices)):
+        throw_rune_choice = True
+        while throw_rune_choice:
+            user_input = some_functions_copy.get_numbers_from_input(
+                "", 1, len(runestone_choices), False, 1, ["?", "end"]
+            )[0]
 
-        if user_input == "?":
-            runes.runestone_explain(user_runestones)
-        else:
-            thrown_rune = runestone_choices[user_input - 1]
-            thrown_rune.throw(0)
-            break
+            # explains
+            if user_input == "?":
+                runes.runestone_explain(user_runestones)
+
+            # ends turn early
+            elif user_input == "end":
+                confirm = some_functions_copy.get_confirmation()
+                if confirm:
+                    break
+
+            else:
+                thrown_rune = runestone_choices[user_input - 1]
+                arcana, player_attack = thrown_rune.throw(player_arcana, enemy.name)
+                throw_rune_choice = False
+
+#     next will be the spell casting phase, which consumes arcana, and then the enemy turn
 
 
 if __name__ == "__main__":
@@ -102,6 +116,5 @@ if __name__ == "__main__":
             ),
         ],
         2,
-        [],
-        "chicken",
+        Enemy("chicken"),
     )

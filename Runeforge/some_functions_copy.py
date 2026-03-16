@@ -5,12 +5,12 @@ def get_numbers_from_input(
         maximum: int = None,
         dupes: bool = True,
         choice_amount: int = None,
-        exception: str = None,
+        exceptions: list[str] = None,
 ):
     while True:
         try:
             user_input = input(prompt)
-            if user_input == exception:
+            if user_input in exceptions:
                 return user_input
 
             last_comma = -1
@@ -53,3 +53,16 @@ def get_numbers_from_input(
 
         else:
             return numbers
+
+def get_confirmation():
+    while True:
+        runestone_confirmation = input("is this your choice? - y/n ")
+
+        if runestone_confirmation == ("y" or "yes"):
+            return True
+
+        elif runestone_confirmation == ("n" or "no"):
+            return False
+
+        else:
+            print("that is not a yes or a no!")
