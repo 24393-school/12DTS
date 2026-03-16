@@ -3,15 +3,6 @@ import runes
 import some_functions_copy
 import random, time, sys
 
-class Enemy:
-    def __init__(self, name):
-        self.name = name
-
-# For use later to hold the player's stuff
-class Player:
-    def __init__(self, runestone_bag: list = [runes.Runestone]) -> None:
-        self.runestone_bag = runestone_bag
-
 
 # function for choosing some runes to use from a list
 def choose_runes(user_runestones, user_runestone_capacity):
@@ -43,18 +34,20 @@ def choose_runes(user_runestones, user_runestone_capacity):
 
 # battle function for fighting enemies. takes enemy and player data. Will Class player and enemy later
 def battle(
-        user_runestones: list[runes.Runestone],
-        user_runestone_capacity: int,
-        enemy: Enemy
+        player_fighter: runes.Player,
+        enemy: runes.Enemy
 ):
     print(f"An enemy approaches: a mighty {enemy.name}")
     print("they draw their runestones")
     print("so do you")
 
-    # selection phase for the turn. In this part, the player chooses which of their runestones they will use
-    player_arcana = 0
+    print(player_fighter)
+    print(player_fighter.arcana)
 
-    runestone_choices = choose_runes(user_runestones, user_runestone_capacity)
+    # selection phase for the turn. In this part, the player chooses which of their runestones they will use
+
+
+    runestone_choices = choose_runes(player_fighter.runestone_bag, player_fighter.runestone_capacity)
 
     while True:
         runestone_confirmation = some_functions_copy.get_confirmation()
@@ -65,28 +58,35 @@ def battle(
 
         else:
             print("All right. Choose again")
-            runestone_choices = choose_runes(user_runestones, user_runestone_capacity)
-
-    print("you draw your runestones from your bag... which would you like to throw first? Press ? for more info, "
-          "and type 'end' to end your throw phase")
-
-    for runestone, i in zip(runestone_choices, range(len(runestone_choices))):
-        if runestone.nickname:
-            print(f"{i + 1}. {runestone.nickname}")
-        else:
-            print(f"{i + 1}. {runestone}")
+            runestone_choices = choose_runes(player_fighter.runestone_bag, player_fighter.runestone_capacity)
 
     # choose the stones to throw(in order)
     for i in range(len(runestone_choices)):
+        if i != 0:
+            print("you draw your runestones from your bag... which would you like to throw next? Press ? for more info,"
+                  "and type 'end' to end your throw phase")
+
+        else:
+            print(
+                "you draw your runestones from your bag... which would you like to throw first? Press ? for more info, "
+                "and type 'end' to end your throw phase")
+
+        for runestone, i in zip(runestone_choices, range(len(runestone_choices))):
+            if runestone.nickname:
+                print(f"{i + 1}. {runestone.nickname}")
+            else:
+                print(f"{i + 1}. {runestone}")
+
         throw_rune_choice = True
         while throw_rune_choice:
+
             user_input = some_functions_copy.get_numbers_from_input(
                 "", 1, len(runestone_choices), False, 1, ["?", "end"]
             )[0]
 
             # explains
             if user_input == "?":
-                runes.runestone_explain(user_runestones)
+                runes.runestone_explain(player_fighter.runestone_bag)
 
             # ends turn early
             elif user_input == "end":
@@ -96,25 +96,19 @@ def battle(
 
             else:
                 thrown_rune = runestone_choices[user_input - 1]
-                arcana, player_attack = thrown_rune.throw(player_arcana, enemy.name)
+                arcana, player_attack = thrown_rune.throw(player_fighter.arcana, enemy.name)
                 throw_rune_choice = False
+                runestone_choices.pop(runestone_choices.index(thrown_rune))
+                enemy.current_hp -= player_attack
+                player_attack = 0
 
-#     next will be the spell casting phase, which consumes arcana, and then the enemy turn
+            #     next will be the spell casting phase, which consumes arcana, and then the enemy turn
 
 
 if __name__ == "__main__":
+    player = runes.Player(),
+    print(player[0].arcana)
     battle(
-        [
-            runes.Runestone(
-                "metal",
-                3,
-                [runes.Rune.create_rune("isaz"), runes.Rune.create_rune("isaz")],
-            ),
-            runes.Runestone.create_runestone(
-                "base",
-                [runes.Rune.create_rune("sōwulō"), runes.Rune.create_rune("sōwulō")],
-            ),
-        ],
-        2,
-        Enemy("chicken"),
+        player,
+        runes.Enemy("chicken", 10)
     )

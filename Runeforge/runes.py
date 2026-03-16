@@ -6,6 +6,14 @@ from profile import run
 
 STRING_FORMATTING_TABLE = str.maketrans("", "", "[]'")
 
+
+def arcane_bolt_effect():
+    print("you channel your ARCANA into a bolt of energy, and loose it at the enemy")
+    damage = random.randint(5, 10)
+    print(f"{damage} damage")
+    return
+
+
 # going to use your arcana to modify une effects, just here so I don't forget
 class Spell:
     def __init__(self, arcana_cost: int, colour: list[str], effect: typing.Callable):
@@ -13,11 +21,15 @@ class Spell:
         self.colour = colour
         self.effect = effect
 
+    def cast(self, user):
+        user.arcana -= self.arcana_cost
+        self.effect()
+
 
 # this is going to be all of the rune abilities here. they will take, and return the game state, just mutating it
 def isaz_effect(arcana, mask, enemy_name):
     print(
-        "Ice forms over all of your runestones, and snow begins to fly in the air... +10 arcana, and all other "
+        "Ice forms over all of your runestones, and snow begins to fly in the air... +10 ARCANA, and all other "
         "runes will be considered blue this round"
     )
     arcana += 10
@@ -65,9 +77,9 @@ class Rune:
         self.effect = effect
         ## self.enhancement = enhancement
 
-    def activate(self, arcana, mask):
-        arcana, mask = self.effect(arcana, mask)
-        return arcana, mask
+    def activate(self, arcana, mask, enemy_name):
+        arcana, mask, attack = self.effect(arcana, mask, enemy_name)
+        return arcana, mask, attack
 
 
 # this will be the "die" that the runes ar own. it will be rolled to get a rune
@@ -108,16 +120,37 @@ class Runestone:
                 print(
                     f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with {face.colour} power..."
                 )
-                x = face.activate(arcana, self.mask, enemy_name)
-                return x
+                arcana, mask, attack = face.activate(arcana, self.mask, enemy_name)
+                return arcana, attack
             else:
                 print("it comes up blank")
+                return arcana, 0
 
         except IndexError:
             print("it comes up blank")
+            return arcana, 0
 
     def __str__(self) -> str:
         return self.info
+
+
+class Enemy:
+    def __init__(self, name, max_hp):
+        self.name = name
+        self.max_hp = max_hp
+        self.current_hp = self.max_hp
+
+
+# For use later to hold the player's stuff
+class Player:
+    def __init__(self, runestone_bag: list[Runestone] = [], spells: list[Spell] = [], runestone_capacity: int = 1,
+                 arcana: int = 0) -> None:
+        self.runestone_bag = runestone_bag
+        self.spells = spells
+        self.runestone_capacity = runestone_capacity
+        self.arcana = arcana
+
+
 
 
 def runestone_explain(runestones):
@@ -127,8 +160,8 @@ def runestone_explain(runestones):
         else:
             print(f"{i + 1}. A {runestone}")
 
-# x = create_rune("isaz")
+## x = create_rune("isaz")
 
-# die = Runestone("none", 2, [x, x])
+## die = Runestone("none", 2, [x, x])
 
-# print(die)
+## print(die)
