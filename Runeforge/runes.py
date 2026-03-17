@@ -27,19 +27,17 @@ class Spell:
 
 
 # this is going to be all of the rune abilities here. they will take, and return the game state, just mutating it
-def isaz_effect(arcana, mask, enemy_name):
+def isaz_effect(world_state: WorldState, caller: Rune):
     print(
         "Ice forms over all of your runestones, and snow begins to fly in the air... +10 ARCANA, and all other "
         "runes will be considered blue this round"
     )
-    arcana += 10
-    mask = "blue"
-    return arcana, mask, 0
+    world_state.player.arcana += 10
+    caller.parent.mask = "blue"
 
 
-def sōwulō_effect(arcana, mask, enemy_name):
+def sōwulō_effect(wor):
     print("radiant light shines from the heavens, and your soul glows bright with warmth")
-    return arcana, mask, 0
 
 
 # class for enhancements for rune. Going to give bonuses or abilities etc
@@ -58,11 +56,12 @@ class Rune:
     }
 
     @classmethod
-    def create_rune(cls, type) -> Rune:
-        return Rune(*Rune.RUNE_TYPE_DATA[type])
+    def create_rune(cls, base_type, caller) -> Rune:
+        return Rune(caller, *Rune.RUNE_TYPE_DATA[base_type])
 
     def __init__(
             self,
+            parent: Runestone,
             name: str,
             glyph: str,
             colour: str,
@@ -70,6 +69,7 @@ class Rune:
             effect: typing.Callable,
             ## enhancement: typing.Callable,
     ):
+        self.parent = parent
         self.name = name
         self.glyph = glyph
         self.colour = colour
@@ -77,23 +77,26 @@ class Rune:
         self.effect = effect
         ## self.enhancement = enhancement
 
-    def activate(self, arcana, mask, enemy_name):
-        arcana, mask, attack = self.effect(arcana, mask, enemy_name)
-        return arcana, mask, attack
+    def activate(self, world_state: WorldState):
+        self.effect(WorldState)
 
 
 # this will be the "die" that the runes ar own. it will be rolled to get a rune
 class Runestone:
-    RUNESTONE_TYPE_DATA = {"base": ("stone", 3, [])}
+    RUNESTONE_TYPE_DATA = {"base": ("stone", 3),
+                           "coin": ("metal", 2)}
 
-    @classmethod
-    def create_runestone(cls, type, rune_overide: list = None) -> Runestone:
-        if not rune_overide:
-            return Runestone(*Runestone.RUNESTONE_TYPE_DATA[type])
-        else:
-            return Runestone(
-                Runestone.RUNESTONE_TYPE_DATA[type][0], Runestone.RUNESTONE_TYPE_DATA[type][1], rune_overide
-            )
+    @property
+    def info(self):
+        return f"{self.sides}-sided {self.material} runestone, with the runes {([r.name for r in self.runes])}".translate(
+            STRING_FORMATTING_TABLE
+        )
+
+    @classmethod  # creates a blank runestone of a certain type
+    def create_runestone(cls, base) -> Runestone:
+        return Runestone(
+            Runestone.RUNESTONE_TYPE_DATA[base][0], Runestone.RUNESTONE_TYPE_DATA[base][1], []
+        )
 
     def __init__(self, material: str, sides: int, runes: list[Rune, bool]):
         self.material = material
@@ -104,13 +107,20 @@ class Runestone:
             for i in range(sides - len(self.runes)):
                 self.runes.append(None)
 
+        print(self.runes)
+
         self.mask = ""
-        self.info = f"{self.sides}-sided {self.material} runestone, with the runes {([r.name for r in self.runes])}".translate(
-            STRING_FORMATTING_TABLE
-        )
+
         self.nickname = input(f"enter a nickname for your {self.info} for ease of use ")
 
-    def throw(self, arcana, enemy_name):
+    def add_runes(self, rune_name):
+        if len(self.runes) < self.sides:
+            self.runes.append(Rune.create_rune(rune_name, self))
+
+        else:
+            print("your rune is full!")
+
+    def throw(self, world_state: WorldState):
         print("you toss the runestone high into the air...")
         try:
 
@@ -120,15 +130,16 @@ class Runestone:
                 print(
                     f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with {face.colour} power..."
                 )
-                arcana, mask, attack = face.activate(arcana, self.mask, enemy_name)
-                return arcana, attack
+                face.activate(world_state, self.mask)
+
             else:
                 print("it comes up blank")
-                return arcana, 0
 
-        except IndexError:
-            print("it comes up blank")
-            return arcana, 0
+
+        # except IndexError:
+        #     print("it comes up blank")
+        finally:
+            pass
 
     def __str__(self) -> str:
         return self.info
@@ -149,8 +160,13 @@ class Player:
         self.spells = spells
         self.runestone_capacity = runestone_capacity
         self.arcana = arcana
+        self.current_attack = 0
 
 
+class WorldState:
+    def __init__(self, player: Player, current_enemy: Enemy):
+        self.player = player
+        self.current_enemy = current_enemy
 
 
 def runestone_explain(runestones):

@@ -6,31 +6,28 @@ import time
 import runes
 import some_functions_copy
 
-class World_State:
-    def __init__(self, player, round):
-        pass
 
 # function for choosing some runes to use from a list
-def choose_runes(user_runestones, user_runestone_capacity):
+def choose_runes(world_state: runes.WorldState):
     print(
-        f"Choose up to {user_runestone_capacity} runestones from your bag. Enter ? for more detail:"
+        f"Choose up to {world_state.player.runestone_capacity} runestones from your bag. Enter ? for more detail:"
         # ? here gives the full description
     )
-    for runestone, i in zip(user_runestones, range(len(user_runestones))):
+    for runestone, i in zip(world_state.player.runestone_bag, range(len(world_state.player.runestone_bag))):
         if runestone.nickname:
             print(f"{i + 1}. {runestone.nickname}")
         else:
             print(f"r{i + 1}. {runestone}")
 
     user_input = some_functions_copy.get_numbers_from_input(
-        "", 1, len(user_runestones), False, user_runestone_capacity, "?"
+        "", 1, len(world_state.player.runestone_bag), False, world_state.player.runestone_capacity, "?"
     )
 
     if user_input == "?":
-        runes.runestone_explain(user_runestones)
+        runes.runestone_explain(world_state.player.runestone_bag)
 
     else:
-        runestone_choices = [user_runestones[i - 1] for i in user_input]
+        runestone_choices = [world_state.player.runestone_bag[i - 1] for i in user_input]
         print("you have chosen:")
         for rune in runestone_choices:
             print(rune.nickname)
@@ -39,19 +36,14 @@ def choose_runes(user_runestones, user_runestone_capacity):
 
 
 # battle function for fighting enemies. takes enemy and player data. Will Class player and enemy later
-def battle(player_fighter: runes.Player, enemy: runes.Enemy):
+def battle(world_state: runes.WorldState, enemy: runes.Enemy):
     print(f"An enemy approaches: a mighty {enemy.name}")
     print("they draw their runestones")
     print("so do you")
 
-    print(player_fighter)
-    print(player_fighter.arcana)
-
     # selection phase for the turn. In this part, the player chooses which of their runestones they will use
 
-    runestone_choices = choose_runes(
-        player_fighter.runestone_bag, player_fighter.runestone_capacity
-    )
+    runestone_choices = choose_runes(world_state)
 
     while True:
         runestone_confirmation = some_functions_copy.get_confirmation()
@@ -62,11 +54,9 @@ def battle(player_fighter: runes.Player, enemy: runes.Enemy):
 
         else:
             print("All right. Choose again")
-            runestone_choices = choose_runes(
-                player_fighter.runestone_bag, player_fighter.runestone_capacity
-            )
+            runestone_choices = choose_runes(world_state)
 
-    # choose the stones to throw(in order)
+    # choose the stones to throw (in order)
     for i in range(len(runestone_choices)):
         if i != 0:
             print(
@@ -94,7 +84,7 @@ def battle(player_fighter: runes.Player, enemy: runes.Enemy):
 
             # explains
             if user_input == "?":
-                runes.runestone_explain(player_fighter.runestone_bag)
+                runes.runestone_explain(world_state.player.runestone_bag)
 
             # ends turn early
             elif user_input == "end":
@@ -105,7 +95,7 @@ def battle(player_fighter: runes.Player, enemy: runes.Enemy):
             else:
                 thrown_rune = runestone_choices[user_input - 1]
                 arcana, player_attack = thrown_rune.throw(
-                    player_fighter.arcana, enemy.name
+                    world_state
                 )
                 throw_rune_choice = False
                 runestone_choices.pop(runestone_choices.index(thrown_rune))
@@ -116,6 +106,13 @@ def battle(player_fighter: runes.Player, enemy: runes.Enemy):
 
 
 if __name__ == "__main__":
-    player = (runes.Player(),)
-    print(player[0].arcana)
-    battle(player, runes.Enemy("chicken", 10))
+    starter_runestones = [runes.Runestone.create_runestone("base"),
+                          runes.Runestone.create_runestone("coin")]
+
+    starter_runestones[0].add_runes("isaz")
+    print(starter_runestones[0])
+
+    player = runes.Player([], [], 2, 0)
+    world = runes.WorldState(player, None)
+
+    battle(world, runes.Enemy("chicken", 10))
