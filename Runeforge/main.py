@@ -1,8 +1,14 @@
 # imports
+import random
+import sys
+import time
+
 import runes
 import some_functions_copy
-import random, time, sys
 
+class World_State:
+    def __init__(self, player, round):
+        pass
 
 # function for choosing some runes to use from a list
 def choose_runes(user_runestones, user_runestone_capacity):
@@ -33,10 +39,7 @@ def choose_runes(user_runestones, user_runestone_capacity):
 
 
 # battle function for fighting enemies. takes enemy and player data. Will Class player and enemy later
-def battle(
-        player_fighter: runes.Player,
-        enemy: runes.Enemy
-):
+def battle(player_fighter: runes.Player, enemy: runes.Enemy):
     print(f"An enemy approaches: a mighty {enemy.name}")
     print("they draw their runestones")
     print("so do you")
@@ -46,8 +49,9 @@ def battle(
 
     # selection phase for the turn. In this part, the player chooses which of their runestones they will use
 
-
-    runestone_choices = choose_runes(player_fighter.runestone_bag, player_fighter.runestone_capacity)
+    runestone_choices = choose_runes(
+        player_fighter.runestone_bag, player_fighter.runestone_capacity
+    )
 
     while True:
         runestone_confirmation = some_functions_copy.get_confirmation()
@@ -58,18 +62,23 @@ def battle(
 
         else:
             print("All right. Choose again")
-            runestone_choices = choose_runes(player_fighter.runestone_bag, player_fighter.runestone_capacity)
+            runestone_choices = choose_runes(
+                player_fighter.runestone_bag, player_fighter.runestone_capacity
+            )
 
     # choose the stones to throw(in order)
     for i in range(len(runestone_choices)):
         if i != 0:
-            print("you draw your runestones from your bag... which would you like to throw next? Press ? for more info,"
-                  "and type 'end' to end your throw phase")
+            print(
+                "you draw your runestones from your bag... which would you like to throw next? Press ? for more info,"
+                "and type 'end' to end your throw phase"
+            )
 
         else:
             print(
                 "you draw your runestones from your bag... which would you like to throw first? Press ? for more info, "
-                "and type 'end' to end your throw phase")
+                "and type 'end' to end your throw phase"
+            )
 
         for runestone, i in zip(runestone_choices, range(len(runestone_choices))):
             if runestone.nickname:
@@ -79,7 +88,6 @@ def battle(
 
         throw_rune_choice = True
         while throw_rune_choice:
-
             user_input = some_functions_copy.get_numbers_from_input(
                 "", 1, len(runestone_choices), False, 1, ["?", "end"]
             )[0]
@@ -96,7 +104,9 @@ def battle(
 
             else:
                 thrown_rune = runestone_choices[user_input - 1]
-                arcana, player_attack = thrown_rune.throw(player_fighter.arcana, enemy.name)
+                arcana, player_attack = thrown_rune.throw(
+                    player_fighter.arcana, enemy.name
+                )
                 throw_rune_choice = False
                 runestone_choices.pop(runestone_choices.index(thrown_rune))
                 enemy.current_hp -= player_attack
@@ -106,9 +116,6 @@ def battle(
 
 
 if __name__ == "__main__":
-    player = runes.Player(),
+    player = (runes.Player(),)
     print(player[0].arcana)
-    battle(
-        player,
-        runes.Enemy("chicken", 10)
-    )
+    battle(player, runes.Enemy("chicken", 10))
