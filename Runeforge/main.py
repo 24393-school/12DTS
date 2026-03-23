@@ -4,7 +4,7 @@ import sys
 import time
 
 import runes
-import some_functions_copy
+import input_processing
 
 
 # function for choosing some runes to use from a list
@@ -17,9 +17,9 @@ def choose_runes(world_state: runes.WorldState):
         if runestone.nickname:
             print(f"{i + 1}. {runestone.nickname}")
         else:
-            print(f"r{i + 1}. {runestone}")
+            print(f"{i + 1}. {runestone}")
 
-    user_input = some_functions_copy.get_numbers_from_input(
+    user_input = input_processing.get_numbers_from_input(
         "", 1, len(world_state.player.runestone_bag), False, world_state.player.runestone_capacity, "?"
     )
 
@@ -46,7 +46,7 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy):
     runestone_choices = choose_runes(world_state)
 
     while True:
-        runestone_confirmation = some_functions_copy.get_confirmation()
+        runestone_confirmation = input_processing.get_confirmation()
 
         if runestone_confirmation:
             print("runestones selected")
@@ -78,7 +78,7 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy):
 
         throw_rune_choice = True
         while throw_rune_choice:
-            user_input = some_functions_copy.get_numbers_from_input(
+            user_input = input_processing.get_numbers_from_input(
                 "", 1, len(runestone_choices), False, 1, ["?", "end"]
             )[0]
 
@@ -88,7 +88,7 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy):
 
             # ends turn early
             elif user_input == "end":
-                confirm = some_functions_copy.get_confirmation()
+                confirm = input_processing.get_confirmation()
                 if confirm:
                     break
 
@@ -100,9 +100,35 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy):
                 throw_rune_choice = False
                 runestone_choices.pop(runestone_choices.index(thrown_rune))
                 enemy.current_hp -= player_attack
-                player_attack = 0
 
-            #     next will be the spell casting phase, which consumes arcana, and then the enemy turn
+        # spell casting phase
+        spell_chosen = False
+        while not spell_chosen:
+            print(f"You have {arcana} ARCANA. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip")
+
+            for spell, i in zip(player.spells, range(len(player.spells))):
+                print(f"{i + 1}. {spell.name}")
+
+            spell_choice = input_processing.get_numbers_from_input("", 1, len(player.spells + 1), False, 1,
+                                                                   ["?", "end"])
+
+            if spell_choice == "?":
+                runes.spell_explain(player.spells)
+
+            elif spell_choice == "end":
+                spell_choice = None
+                spell_chosen = True
+
+            else:
+
+                spell_choice = player.spells[spell_choice-1]
+                spell_chosen = True
+
+        if spell_choice:
+            print(f"you raise your hands to the sky as ARCANA flows around you. \n You cast {spell_choice.name}")
+
+        else:
+            print("you decide not to cast a spell")
 
 
 if __name__ == "__main__":
@@ -110,9 +136,13 @@ if __name__ == "__main__":
                           runes.Runestone.create_runestone("coin")]
 
     starter_runestones[0].add_runes("isaz")
-    print(starter_runestones[0])
+    ## print(starter_runestones[0])
 
-    player = runes.Player([], [], 2, 0)
+    player = runes.Player(starter_runestones, [runes.Spell.create_spell("arcane bolt")], 2, 0)
+
+    runes.spell_explain(player.spells)
+    runes.runestone_explain(player.runestone_bag)
+
     world = runes.WorldState(player, None)
 
     battle(world, runes.Enemy("chicken", 10))
