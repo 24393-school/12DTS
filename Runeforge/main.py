@@ -7,6 +7,13 @@ import runes
 import input_processing
 
 
+class Colour:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    BLUE = "\033[94m"
+    RESET = "\033[0m"
+
+
 # function for choosing some runes to use from a list
 def choose_runes(world_state: runes.WorldState):
     print(
@@ -30,16 +37,19 @@ def choose_runes(world_state: runes.WorldState):
         runestone_choices = [world_state.player.runestone_bag[i - 1] for i in user_input]
         print("you have chosen:")
         for rune in runestone_choices:
-            print(rune.nickname)
+            print(rune)
 
         return runestone_choices
 
 
-# battle function for fighting enemies. takes enemy and player data. Will Class player and enemy later
+# battle function for fighting enemies. takes enemy and player data.
 def battle(world_state: runes.WorldState, enemy: runes.Enemy):
     print(f"An enemy approaches: a mighty {enemy.name}")
+    time.sleep(0.5)
     print("they draw their runestones")
+    time.sleep(0.5)
     print("so do you")
+    time.sleep(0.5)
 
     # selection phase for the turn. In this part, the player chooses which of their runestones they will use
 
@@ -94,55 +104,76 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy):
 
             else:
                 thrown_rune = runestone_choices[user_input - 1]
-                arcana, player_attack = thrown_rune.throw(
+                thrown_rune.throw(
                     world_state
                 )
                 throw_rune_choice = False
                 runestone_choices.pop(runestone_choices.index(thrown_rune))
-                enemy.current_hp -= player_attack
+                enemy.current_hp -= player.current_attack
 
-        # spell casting phase
-        spell_chosen = False
-        while not spell_chosen:
-            print(f"You have {arcana} ARCANA. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip")
+    # spell casting phase
+    spell_chosen = False
+    while not spell_chosen:
+        print(
+            f"You have {Colour.BLUE}{player.arcana} ARCANA{Colour.RESET}. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip")
 
-            for spell, i in zip(player.spells, range(len(player.spells))):
-                print(f"{i + 1}. {spell.name}")
+        for spell, i in zip(player.spells, range(len(player.spells))):
+            print(f"{i + 1}. {spell.name}")
 
-            spell_choice = input_processing.get_numbers_from_input("", 1, len(player.spells + 1), False, 1,
-                                                                   ["?", "end"])
+        spell_choice = input_processing.get_numbers_from_input("", 1, len(player.spells) + 1, False, 1,
+                                                               ["?", "end"])[0]
 
-            if spell_choice == "?":
-                runes.spell_explain(player.spells)
+        if spell_choice == "?":
+            runes.spell_explain(player.spells)
 
-            elif spell_choice == "end":
-                spell_choice = None
-                spell_chosen = True
-
-            else:
-
-                spell_choice = player.spells[spell_choice-1]
-                spell_chosen = True
-
-        if spell_choice:
-            print(f"you raise your hands to the sky as ARCANA flows around you. \n You cast {spell_choice.name}")
+        elif spell_choice == "end":
+            spell_choice = None
+            spell_chosen = True
 
         else:
-            print("you decide not to cast a spell")
+
+            spell_choice = player.spells[spell_choice - 1]
+            spell_chosen = True
+
+    if spell_choice:
+        print(f"you raise your hands to the sky as {Colour.BLUE}ARCANA{Colour.RESET} flows around you. \n You cast {spell_choice.name}")
+
+    else:
+        print("you decide not to cast a spell")
+
+
+def make_starter_kit(world: runes.WorldState):
+    starter_runestones = [runes.Runestone.create_runestone("base"),
+                          runes.Runestone.create_runestone("coin")]
+    starter_runestones[0].add_runes(["isaz", "isaz"])
+    starter_runestones[1].add_runes(["sōwulō"])
+
+    print("these are your staring runestones")
+    runes.runestone_explain(starter_runestones)
+    time.sleep(0.5)
+
+    if input_processing.get_confirmation('would you like to name your runes for easy reference?'):
+        for rune in starter_runestones:
+            rune.give_nickname()
+
+    starter_spells = [runes.Spell.create_spell("arcane bolt")]
+    world.player.runestone_bag = starter_runestones
+    world.player.spells = starter_spells
 
 
 if __name__ == "__main__":
-    starter_runestones = [runes.Runestone.create_runestone("base"),
-                          runes.Runestone.create_runestone("coin")]
+    player = runes.Player([], [], 2, 0)
+    world = runes.WorldState(player, None)
+    make_starter_kit(world)
 
-    starter_runestones[0].add_runes("isaz")
     ## print(starter_runestones[0])
 
-    player = runes.Player(starter_runestones, [runes.Spell.create_spell("arcane bolt")], 2, 0)
-
+    print("these are your spells")
     runes.spell_explain(player.spells)
-    runes.runestone_explain(player.runestone_bag)
+    time.sleep(0.5)
 
-    world = runes.WorldState(player, None)
+    print("these are your runes")
+    runes.runestone_explain(player.runestone_bag)
+    time.sleep(0.5)
 
     battle(world, runes.Enemy("chicken", 10))

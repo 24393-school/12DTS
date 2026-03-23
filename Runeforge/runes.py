@@ -3,11 +3,19 @@ from __future__ import annotations
 import random
 import typing
 
+
+class Colour:
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    BLUE = "\033[94m"
+    RESET = "\033[0m"
+
+
 STRING_FORMATTING_TABLE = str.maketrans("", "", "[]'")
 
 
 def arcane_bolt_effect(world_state: WorldState):
-    print("you channel your ARCANA into a bolt of energy, and loose it at the enemy")
+    print(f"you channel your {Colour.BLUE}ARCANA{Colour.RESET} into a bolt of energy, and loose it at the enemy")
     damage = random.randint(5, 10)
     print(f"{damage} damage")
     world_state.current_enemy.current_hp -= damage
@@ -36,17 +44,17 @@ class Spell:
         self.effect()
 
 
-# this is going to be all the rune abilities here. they will take, and return the game state, just mutating it
+# this is going to be all the rune abilities here. they will take, and return the game state, just mutating it. they also now use their pasrent rune, and its parent runestone
 def isaz_effect(world_state: WorldState, caller: Rune):
     print(
-        "Ice forms over all of your runestones, and snow begins to fly in the air... +10 ARCANA, and all other "
+        f"Ice forms over all of your runestones, and snow begins to fly in the air... +10 {Colour.BLUE}ARCANA{Colour.RESET}, and all other"
         "runes will be considered blue this round"
     )
     world_state.player.arcana += 10
     caller.parent.mask = "blue"
 
 
-def sōwulō_effect(world_state):
+def sōwulō_effect(world_state: WorldState, caller: Rune):
     print("radiant light shines from the heavens, and your soul glows bright with warmth")
 
 
@@ -88,7 +96,7 @@ class Rune:
         ## self.enhancement = enhancement
 
     def activate(self, world_state: WorldState):
-        self.effect(WorldState)
+        self.effect(world_state, self)
 
 
 # this will be the "die" that the runes ar own. it will be rolled to get a rune
@@ -113,10 +121,6 @@ class Runestone:
         self.sides = sides
         self.runes = runes
 
-        if len(self.runes) > sides:
-            for i in range(sides - len(self.runes)):
-                self.runes.append(None)
-
         print(self.runes)
 
         self.mask = ""
@@ -125,12 +129,13 @@ class Runestone:
     def give_nickname(self):
         self.nickname = input(f"enter a nickname for your {self.info} for ease of use ")
 
-    def add_runes(self, rune_name):
-        if len(self.runes) < self.sides:
-            self.runes.append(Rune.create_rune(rune_name, self))
+    def add_runes(self, rune_names):
+        for rune in rune_names:
+            if len(self.runes) < self.sides:
+                self.runes.append(Rune.create_rune(rune, self))
 
-        else:
-            print("your rune is full!")
+            else:
+                print("your rune is full!")
 
     def throw(self, world_state: WorldState):
         print("you toss the runestone high into the air...")
@@ -142,14 +147,14 @@ class Runestone:
                 print(
                     f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with {face.colour} power..."
                 )
-                face.activate(world_state, self.mask)
+                face.activate(world_state)
 
             else:
                 print("it comes up blank")
 
 
-        # except IndexError:
-        #     print("it comes up blank")       This is redundant, but may be brought back
+        except IndexError:
+            print("it comes up blank")
         finally:
             pass
 
@@ -196,7 +201,7 @@ def spell_explain(spells: list[Spell]):
     c = "colourless"
     for spell, i in zip(spells, range(len(spells))):
         print(
-            f"{i + 1}. {spell.name}: A {spell.colour if spell.colour else c} spell, costing {spell.arcana_cost} ARCANA. {spell.info}")
+            f"{i + 1}. {spell.name}: A {spell.colour if spell.colour else c} spell, costing {Colour.BLUE}{spell.arcana_cost} ARCANA{Colour.RESET}. {spell.info}")
 
 ## x = create_rune("isaz")
 
