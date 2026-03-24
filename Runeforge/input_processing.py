@@ -1,11 +1,11 @@
 # function that takes asks for input of numbers seperated by commas, and returns a list of the numbers
 def get_numbers_from_input(
-        prompt="",
-        minimum: int = None,
-        maximum: int = None,
-        dupes: bool = True,
-        choice_amount: int = None,
-        exceptions: list[str] = None,
+    prompt: str = "",
+    minimum: int | None = None,
+    maximum: int | None = None,
+    dupes: bool = True,
+    choice_amount: int | None = None,
+    exceptions: list[str] | None = None,
 ):
     while True:
         try:
@@ -20,14 +20,14 @@ def get_numbers_from_input(
             for i in range(len(user_input)):
                 if user_input[i] == "," or i == len(user_input) - 1:
                     if i == len(user_input) - 1:
-                        number = int((user_input[last_comma + 1:]))
+                        number = int((user_input[last_comma + 1 :]))
                     else:
-                        number = int((user_input[last_comma + 1: i]))
+                        number = int((user_input[last_comma + 1 : i]))
 
                     if choice_amount:
                         if len(numbers) + 1 > choice_amount:
                             print("you entered too many numbers")
-                            raise ValueError
+                            raise ValueError("you entered too many numbers")
 
                     # checks that it is within the range provided (could be made more efficient)
                     if minimum:
@@ -69,5 +69,3 @@ def get_confirmation(prompt: str = "is this your choice?"):
 
         else:
             print("that is not a yes or a no!")
-
-

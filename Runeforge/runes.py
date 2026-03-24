@@ -19,30 +19,35 @@ def arcane_bolt_effect(world_state: WorldState):
     damage = random.randint(5, 10)
     print(f"{damage} damage")
     world_state.current_enemy.current_hp -= damage
-    return
 
 
 # going to use your arcana to modify une effects, just here so I don't forget
 class Spell:
     SPELL_BASE_TYPES = {
-        "arcane bolt": ('Arcane Bolt', 5, None, arcane_bolt_effect, "Deals arcane damage to your enemy")
+        "arcane bolt": ('Arcane Bolt', 5, arcane_bolt_effect, None, "Deals arcane damage to your enemy")
     }
 
     @classmethod
     def create_spell(cls, name):
         return Spell(*Spell.SPELL_BASE_TYPES[name])
 
-    def __init__(self, name, arcana_cost: int, colour: list[str], effect: typing.Callable, info: str):
+    def __init__(self, name, arcana_cost: int, effect: typing.Callable, colour: list[str] | None = None,  info: str | None = None):
         self.name = name
         self.arcana_cost = arcana_cost
         self.colour = colour
         self.effect = effect
-        self.info = info
+        self.info = info or ""
 
     def cast(self, user):
         user.arcana -= self.arcana_cost
         self.effect()
 
+def arcane_bolt():
+    return Spell(
+            name='Arcane Bolt',
+            arcana_cost=5,
+            effect=arcane_bolt_effect,
+            info="Deals arcane damage to your enemy")
 
 # this is going to be all the rune abilities here. they will take, and return the game state, just mutating it. they also now use their pasrent rune, and its parent runestone
 def isaz_effect(world_state: WorldState, caller: Rune):
@@ -77,6 +82,7 @@ class Rune:
     def create_rune(cls, base_type, caller) -> Rune:
         return Rune(caller, *Rune.RUNE_TYPE_DATA[base_type])
 
+
     def __init__(
             self,
             parent: Runestone,
@@ -98,6 +104,16 @@ class Rune:
     def activate(self, world_state: WorldState):
         self.effect(world_state, self)
 
+
+
+
+
+class IsazRune(Rune):
+    def __init__(self, parent):
+        super().__init__(parent, "Isaz")
+
+    def activate(self, world_state: WorldState):
+        return
 
 # this will be the "die" that the runes ar own. it will be rolled to get a rune
 class Runestone:
@@ -121,8 +137,6 @@ class Runestone:
         self.sides = sides
         self.runes = runes
 
-        print(self.runes)
-
         self.mask = ""
         self.nickname = None
 
@@ -140,6 +154,11 @@ class Runestone:
     def throw(self, world_state: WorldState):
         print("you toss the runestone high into the air...")
         try:
+            choice = random.randint(0, self.sides - 1)
+            if choice > len(self.runes) or not self.runes[choice]:
+                print(its blnk)
+            else:
+                ...
 
             face = self.runes[random.randint(0, self.sides - 1)]
 
@@ -155,14 +174,17 @@ class Runestone:
 
         except IndexError:
             print("it comes up blank")
-        finally:
-            pass
+
 
     def __str__(self) -> str:
         if self.nickname:
             return self.nickname
         else:
             return self.info
+
+        return self.nickname if self.nickname else self.info
+        return self.nickname or self.info
+
 
 
 class Enemy:
@@ -188,9 +210,12 @@ class WorldState:
         self.player = player
         self.current_enemy = current_enemy
 
+class runestone_bag(list):
+    def explain(self)->str:
+        ...
 
 def runestone_explain(runestones):
-    for runestone, i in zip(runestones, range(len(runestones))):
+    for i, runestone in enumerate(runestones):
         if runestone.nickname:
             print(f"{i + 1}. {runestone}: A {runestone.info}")
         else:
@@ -199,7 +224,7 @@ def runestone_explain(runestones):
 
 def spell_explain(spells: list[Spell]):
     c = "colourless"
-    for spell, i in zip(spells, range(len(spells))):
+    for i, spell in enumerate(spells):
         print(
             f"{i + 1}. {spell.name}: A {spell.colour if spell.colour else c} spell, costing {Colour.BLUE}{spell.arcana_cost} ARCANA{Colour.RESET}. {spell.info}")
 
