@@ -10,8 +10,9 @@ def get_numbers_from_input(
     while True:
         try:
             user_input = input(prompt)
-            if user_input.lower() in exceptions:
-                return user_input.lower()
+            if exceptions:
+                if user_input.lower() in exceptions:
+                    return user_input.lower()
 
             last_comma = -1
             numbers = []
