@@ -125,7 +125,7 @@ def battle(world_state: runes.WorldState):
 
         for i, spell in enumerate(player.spells):
             print(
-                f"{i + 1}. {spell.name}, costing {COLOURS['PURPLE']}{spell.arcana_cost}{COLOURS['RESET']}"
+                f"{i + 1}. {spell.name}, costing {COLOURS['PURPLE']}{spell.arcana_cost} ARCANA{COLOURS['RESET']}"
             )
 
         spell_choice = input_processing.get_numbers_from_input(
@@ -153,6 +153,8 @@ def battle(world_state: runes.WorldState):
 
     else:
         print("you decide not to cast a spell")
+
+    # enemy turn
 
 
 def make_starter_kit(world: runes.WorldState):
@@ -182,16 +184,16 @@ def make_starter_kit(world: runes.WorldState):
 
 if __name__ == "__main__":
     player = runes.Player(runes.RunestoneBag([]), runes.SpellBook([]), 2, 0)
-    world = runes.WorldState(player, runes.Enemy("chicken", 10))
+    world = runes.WorldState(player, runes.Enemy("Foul Patrick", 10, 1))
     make_starter_kit(world)
 
     ## print(starter_runestones[0])
 
-    print("these are your spells")
+    print("\nthese are your spells:")
     print(player.spells.explain())
     time.sleep(0.5)
 
-    print("these are your runes")
+    print("\nthese are your runes:")
     print(player.runestone_bag.explain())
     time.sleep(0.5)
 

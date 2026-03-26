@@ -45,7 +45,7 @@ class ArcaneBolt(Spell):
             f"you channel your {COLOURS['PURPLE']}ARCANA{COLOURS['RESET']} into a bolt of energy, and loose it at the enemy"
         )
         damage = random.randint(5, 10)
-        print(f"{damage} damage")
+        print(f"{COLOURS['RED']}{damage} damage{COLOURS['RESET']}")
         world_state.current_enemy.current_hp -= damage
 
 
@@ -73,8 +73,11 @@ class Rune:
     ):
         self.parent = parent
         self.colour = colour
-        self.name = f"{COLOURS[self.colour.upper()]}{name}{COLOURS['RESET']}"
-        self.glyph = f"{COLOURS[self.colour.upper()]}{glyph}{COLOURS['RESET']}"
+        self.name = name
+        self.glyph = glyph
+        ## self.name = f"{COLOURS[self.colour.upper()]}{name}{COLOURS['RESET']}"
+        ## self.glyph = f"{COLOURS[self.colour.upper()]}{glyph}{COLOURS['RESET']}"
+        self.colour = colour
         self.tooltip = tooltip
 
         ## self.enhancement = enhancement
@@ -119,9 +122,12 @@ class Runestone:
 
     @property
     def info(self):
+
+        info = f"{self.sides}-sided {self.material} runestone, with the runes"
+
         return (
             f"{self.sides}-sided {self.material} runestone, with the runes"
-            + f"{[r.name for r in self.runes]}".translate(STRING_FORMATTING_TABLE)
+            + f" {[r.name for r in self.runes]}".translate(STRING_FORMATTING_TABLE)
         )
 
     @classmethod  # creates a blank runestone of a certain type
@@ -196,10 +202,11 @@ class SpellBook(list):
 
 
 class Enemy:
-    def __init__(self, name, max_hp):
+    def __init__(self, name, max_hp, attack_power):
         self.name = name
         self.max_hp = max_hp
         self.current_hp = self.max_hp
+        self.attack_powe = attack_power
 
 
 # For use later to hold the player's stuff
