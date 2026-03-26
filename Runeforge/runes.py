@@ -202,11 +202,48 @@ class SpellBook(list):
 
 
 class Enemy:
-    def __init__(self, name, max_hp, attack_power):
+    def __init__(self, name, max_hp, attack_power, sequence_step: int = 0):
         self.name = name
         self.max_hp = max_hp
         self.current_hp = self.max_hp
-        self.attack_powe = attack_power
+        self.attack_power = attack_power
+        self.sequence_step = sequence_step
+
+    def attack(self, world_state: WorldState):
+        world_state.player.current_hp -= self.attack_power + random.randint(
+            int(-self.attack_power / 4), int(self.attack_power / 4)
+        )
+
+    def take_turn(self, world_state):
+        pass
+
+    @property
+    def action_foresight(self) -> str:
+        return "doing nothing"
+
+
+class Chicken(Enemy):
+    def __init__(self):
+        super().__init__("chicken", 10, 5)
+
+    @property
+    def action_foresight(self) -> str:
+        match self.sequence_step:
+            case 0:
+                return "planning to attack"
+
+            case 1:
+                return "planning to heal"
+
+        return "doing nothing"
+
+    def attack(self, world_state: WorldState):
+        super().attack(world_state)
+
+    def take_turn(self, world_state: WorldState):
+        match self.sequence_step:
+            case 0:
+                self.attack(world_state)
 
 
 # For use later to hold the player's stuff
@@ -217,12 +254,15 @@ class Player:
         spells: SpellBook = SpellBook(),
         runestone_capacity: int = 1,
         arcana: int = 0,
+        max_hp: int = 10,
     ) -> None:
         self.runestone_bag = runestone_bag
         self.spells = spells
         self.runestone_capacity = runestone_capacity
         self.arcana = arcana
         self.current_attack = 0
+        self.max_hp = max_hp
+        self.current_hp = self.max_hp
 
 
 class WorldState:
