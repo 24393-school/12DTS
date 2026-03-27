@@ -53,10 +53,10 @@ class ArcaneBolt(Spell):
     def cast(self, world_state: WorldState):
         super().cast(world_state)
         print(
-            f"you channel your {COLOURS['PURPLE']}ARCANA{COLOURS['RESET']} into a bolt of energy, and loose it at the enemy"
+            f"you channel your [purple]ARCANA[/purple] into a bolt of energy, and loose it at the enemy"
         )
         damage = random.randint(5, 10)
-        print(f"{COLOURS['RED']}{damage} damage{COLOURS['RESET']}")
+        print(f"[red]{damage} damage [/red]")
         world_state.current_enemy.current_hp -= damage
 
 
@@ -107,7 +107,7 @@ class IsazRune(Rune):
 
     def activate(self, world_state: WorldState):
         print(
-            f"Ice forms over all of your runestones, and snow begins to fly in the air...  {COLOURS['PURPLE']}+10 ARCANA{COLOURS['RESET']}, and all other "
+            "Ice forms over all of your runestones, and snow begins to fly in the air...  [purple] +10 ARCANA [/purple], and all other "
             "runes will be considered blue this round"
         )
         world_state.player.arcana += 10
@@ -147,14 +147,15 @@ class Runestone:
     ):  # this property gives the longhand information about the runes on the runestone. The nasty list comprehension ternery is for nice formmating
 
         return Text.assemble(
-            f"{self.sides}-sided {self.material} runestone, with the runes ",
+            f" {self.sides}-sided {self.material} runestone, with the runes ",
             *[
                 Text.assemble(
                     Text(rune.name, f"{rune.colour}"),
-                    f"{', ' if self.runes.index(rune) != len(self.runes) else ' and ' if self.runes.index(rune) == len(self.runes) - 1 else ''} ",
+                    f"{'' if self.runes.index(rune) == len(self.runes) - 1 else ', and ' if self.runes.index(rune) == len(self.runes) - 2 else ', '}",
                 )
                 for rune in self.runes
             ],
+            "\n",
         )
 
     @classmethod  # creates a blank runestone of a certain type
@@ -191,16 +192,16 @@ class Runestone:
             face = self.runes[choice]
 
             print(
-                f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with {COLOURS[face.colour.upper()]}{face.colour}{COLOURS['RESET']} power..."
+                f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with [{face.colour}]{face.colour}[/{face.colour}] power..."
             )
 
             # and activates it
             face.activate(world_state)
 
     # this might be bad form, but Rich Texts cand be used as just strings, so it should be all right
-    def __str__(self) -> str | Text:
-        return (
-            self.nickname or self.info
+    def __str__(self) -> str:
+        return self.nickname or str(
+            self.info
         )  # defaults to nickname, else gives the longform version
 
 
@@ -230,7 +231,7 @@ class SpellBook(list):
         explanation = ""
 
         for i, spell in enumerate(self, 1):
-            explanation += f"{i}. {spell.name}: A {spell.colour if spell.colour else 'colourless'} spell, costing {COLOURS['PURPLE']}{spell.arcana_cost} ARCANA{COLOURS['RESET']}. {spell.info}"
+            explanation += f"{i}. {spell.name}: A {spell.colour if spell.colour else 'colourless'} spell, costing [purple]{spell.arcana_cost} ARCANA[/purple]. {spell.info}"
 
         return explanation
 
@@ -252,10 +253,13 @@ class Enemy:
     # base attack, which damages the player based off a base damage stat, and the modifier
     def attack(self, base_attack: int, world_state: WorldState):
         damage = base_attack + self.attack_modifier
-        print(
-            f"The mighty {self.name} attacks for {COLOURS['RED']}{damage} damage{COLOURS['RESET']}"
-        )
+        print(f"The mighty {self.name} attacks for [red]{damage} damage [/red]")
         world_state.player.current_hp -= damage
+        if world_state.player.current_hp <= 0:
+            print("you are slain...")
+
+        else:
+            print(f"you now have {world_state.player.current_hp} hp left")
 
     # base method to be overriden
     def take_turn(self, world_state):

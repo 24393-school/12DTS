@@ -4,13 +4,18 @@ import sys
 import time
 from profile import run
 
-# text colouring module
 from rich import print
+from rich.console import Console
+
+# text colouring module
 from rich.text import Text
 
 # my modules
 import input_processing
 import runes
+
+console = Console(highlight=False)
+
 
 # will be removed when I have RIch up and running
 COLOURS = {
@@ -26,7 +31,7 @@ COLOURS = {
 # sleep, then print
 def slprint(string):
     time.sleep(0.5)
-    print(string)
+    console.print(string)
 
 
 # function for choosing some runes to use from a list
@@ -42,9 +47,9 @@ def choose_runes(world_state: runes.WorldState):
             range(len(world_state.player.runestone_bag)),
         ):
             if runestone.nickname:
-                print(f"{i + 1}. {runestone.nickname}")
+                console.print(f"{i + 1}. {runestone.nickname}")
             else:
-                print(f"{i + 1}. {runestone}")
+                console.print(f"{i + 1}. {runestone}")
 
         user_input = input_processing.get_numbers_from_input(
             "",
@@ -69,7 +74,7 @@ def choose_runes(world_state: runes.WorldState):
             return runestone_choices
 
 
-# battle function for fighting enemies. 
+# battle function for fighting enemies.
 def battle(world_state: runes.WorldState):
     slprint(f"An enemy approaches: a mighty {world_state.current_enemy.name}")
     slprint("they draw their runestones")
@@ -83,8 +88,8 @@ def battle(world_state: runes.WorldState):
     while battle_ongoing:
         turn += 1
 
-        print(f"\n---turn {turn}---\n")
-        
+        slprint(f"\n---turn {turn}---\n")
+
         # prints what the enemy will do
         slprint(
             f"The mighty {world_state.current_enemy.name} is {world_state.current_enemy.action_foresight}\n"
@@ -92,7 +97,9 @@ def battle(world_state: runes.WorldState):
 
         # selection phase for the turn. In this part, the player chooses which of their runestones they will use
 
-        runestone_choices: list[runes.Runestone] | None = choose_runes(world_state)     # the type declaration prevents error flags
+        runestone_choices: list[runes.Runestone] | None = choose_runes(
+            world_state
+        )  # the type declaration prevents error flags
 
         # loops to get confirmation
         while True:
@@ -114,17 +121,16 @@ def battle(world_state: runes.WorldState):
                     f"you draw your runestones from your bag... which would you like to throw {'next' if i != 0 else 'first'}? Press ? for more info,"
                     "and type 'end' to end your throw phase"
                 )
-                
-                # lists the runes 
+
+                # lists the runes
                 for i, runestone in enumerate(runestone_choices):
                     if runestone.nickname:
                         slprint(f"{i + 1}. {runestone.nickname}")
                     else:
                         slprint(f"{i + 1}. {runestone}")
-                
-                
+
                 throw_rune_chosen = False
-                
+
                 # loops to get input about which runestone to throw
                 while not throw_rune_chosen:
                     user_input = input_processing.get_numbers_from_input(
@@ -139,10 +145,10 @@ def battle(world_state: runes.WorldState):
                     elif str(user_input).lower() == "end":
                         confirm = input_processing.get_confirmation()
                         if confirm:
-                            print("You decide to end your turn")
+                            slprint("You decide to end your turn")
                             throw_rune_chosen = True
                             end_turn = True
-                        
+
                     # otherwise, throws the rune
                     else:
                         thrown_rune = runestone_choices[int(user_input) - 1]
@@ -152,7 +158,7 @@ def battle(world_state: runes.WorldState):
                         world_state.current_enemy.current_hp -= (
                             world_state.player.current_attack
                         )
-                
+
                 # gets out of the for loop if end has been selected
                 if end_turn:
                     break
@@ -163,31 +169,30 @@ def battle(world_state: runes.WorldState):
         spell_choice = None  # this is to ensure it is bound
         spell_cast = True
 
-        
         # this checks in case the player cannot cast any spells
         for spell in world_state.player.spells:
             if player.arcana >= spell.arcana_cost:
                 spell_cast = False
-        
+
         # if they can't, it skips the next bit
         if spell_cast:
             slprint(
-                f"you do not have enough {COLOURS['PURPLE']}ARCANA{COLOURS['RESET']} to cast any of your spells\n"
+                "you do not have enough [purple]ARCANA[/purple] to cast any of your spells\n"
             )
 
         while not spell_cast:
             spell_chosen = False
-            
+
             # loops to get a spell choice
             while not spell_chosen:
                 slprint(
-                    f"You have {COLOURS['PURPLE']}{player.arcana} ARCANA{COLOURS['RESET']}. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip"
+                    f"You have [purple]{world_state.player.arcana} ARCANA[/purple]. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip"
                 )
 
                 # prints the spells
                 for i, spell in enumerate(player.spells):
                     slprint(
-                        f"{i + 1}. {spell.name}, costing {COLOURS['PURPLE']}{spell.arcana_cost} ARCANA{COLOURS['RESET']}"
+                        f"{i + 1}. {spell.name}, costing [purple]{spell.arcana_cost} ARCANA[/purple]"
                     )
 
                 # gets input
@@ -212,7 +217,7 @@ def battle(world_state: runes.WorldState):
             if isinstance(spell_choice, runes.Spell):
                 if player.arcana >= spell_choice.arcana_cost:
                     slprint(
-                        f"you raise your hands to the sky as {COLOURS['PURPLE']}ARCANA{COLOURS['RESET']} flows around you. \n You cast {spell_choice.name}"
+                        f"you raise your hands to the sky as [purple]ARCANA[/purple] flows around you. \n You cast {spell_choice.name}"
                     )
                     spell_choice.cast(world_state)
                     spell_cast = True
@@ -220,7 +225,7 @@ def battle(world_state: runes.WorldState):
                 # if they don't have enough arcana, they must choose again (or choose to end)
                 else:
                     slprint(
-                        f"you do not have enough {COLOURS['PURPLE']}ARCANA{COLOURS['RESET']} to cast {spell_choice.name}"
+                        "you do not have enough [purple]ARCANA[/purple] to cast {spell_choice.name}"
                     )
                     slprint("please choose again")
 
@@ -234,16 +239,19 @@ def battle(world_state: runes.WorldState):
 
         world_state.current_enemy.take_turn(world_state)
 
+
 # simple function to initialise the player's gear
 def make_starter_kit(world: runes.WorldState):
     starter_runestones = runes.RunestoneBag(
         [
             runes.Runestone.create_runestone("base"),
             runes.Runestone.create_runestone("coin"),
+            runes.Runestone.create_runestone("coin"),
         ]
     )
     starter_runestones[0].add_runes([runes.IsazRune, runes.IsazRune])
     starter_runestones[1].add_runes([runes.SowuloRune])
+    starter_runestones[2].add_runes([runes.IsazRune])
 
     slprint("these are your staring runestones")
     slprint(starter_runestones.explain())
