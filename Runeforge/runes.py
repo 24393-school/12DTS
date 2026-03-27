@@ -3,6 +3,8 @@ from __future__ import annotations
 import random
 import typing
 
+from rich.text import Text
+
 COLOURS = {
     "RED": "\033[91m",
     "GREEN": "\033[92m",
@@ -75,6 +77,7 @@ class Rune:
         self.colour = colour
         self.name = name
         self.glyph = glyph
+        ## self.name = Text(name)
         ## self.name = f"{COLOURS[self.colour.upper()]}{name}{COLOURS['RESET']}"
         ## self.glyph = f"{COLOURS[self.colour.upper()]}{glyph}{COLOURS['RESET']}"
         self.colour = colour
@@ -202,17 +205,19 @@ class SpellBook(list):
 
 
 class Enemy:
-    def __init__(self, name, max_hp, attack_power, sequence_step: int = 0):
+    def __init__(self, name, max_hp, attack_modifier, sequence_step: int = 0):
         self.name = name
         self.max_hp = max_hp
         self.current_hp = self.max_hp
-        self.attack_power = attack_power
+        self.attack_modifier = attack_modifier
         self.sequence_step = sequence_step
 
-    def attack(self, world_state: WorldState):
-        world_state.player.current_hp -= self.attack_power + random.randint(
-            int(-self.attack_power / 4), int(self.attack_power / 4)
+    def attack(self, base_attack: int, world_state: WorldState):
+        damage = base_attack + self.attack_modifier
+        print(
+            f"The mighty {self.name} attacks for {COLOURS['RED']}{damage} damage{COLOURS['RESET']}"
         )
+        world_state.player.current_hp -= damage
 
     def take_turn(self, world_state):
         pass
@@ -230,20 +235,30 @@ class Chicken(Enemy):
     def action_foresight(self) -> str:
         match self.sequence_step:
             case 0:
-                return "planning to attack"
+                return f"planning to attack for {5 + self.attack_modifier} damage"
 
             case 1:
-                return "planning to heal"
+                return "planning to heal for 5"
+
+            case 2:
+                return f"planning to attack for {10 + self.attack_modifier} damage"
 
         return "doing nothing"
-
-    def attack(self, world_state: WorldState):
-        super().attack(world_state)
 
     def take_turn(self, world_state: WorldState):
         match self.sequence_step:
             case 0:
-                self.attack(world_state)
+                self.attack(5, world_state)
+                self.sequence_step = 1
+
+            case 1:
+                print("The mighty chicken heals 5 hp")
+                self.current_hp += 5
+                self.sequence_step = 2
+
+            case 2:
+                self.attack(10, world_state)
+                self.sequence_step = 0
 
 
 # For use later to hold the player's stuff
