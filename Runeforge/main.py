@@ -2,7 +2,9 @@
 import random
 import sys
 import time
+from ast import Sub
 from profile import run
+from webbrowser import get
 
 from rich import print
 from rich.console import Console
@@ -17,18 +19,7 @@ import runes
 console = Console(highlight=False)
 
 
-# will be removed when I have RIch up and running
-COLOURS = {
-    "RED": "\033[91m",
-    "GREEN": "\033[92m",
-    "YELLOW": "\033[93m",
-    "BLUE": "\033[94m",
-    "PURPLE": "\033[95m",
-    "RESET": "\033[0m",
-}
-
-
-# sleep, then print
+# simple bas function for readability. sleep, then print
 def slprint(string):
     time.sleep(0.5)
     console.print(string)
@@ -39,7 +30,7 @@ def choose_runes(world_state: runes.WorldState):
     runes_chosen = False
     while not runes_chosen:
         slprint(
-            f"Choose up to {world_state.player.runestone_capacity} runestones from your bag. Enter ? for more detail:"
+            f"Choose up to {world_state.player.runestone_capacity} runestones from your bag. Enter ? for more detail:\n"
             # ? here gives the full description
         )
         for runestone, i in zip(
@@ -47,9 +38,9 @@ def choose_runes(world_state: runes.WorldState):
             range(len(world_state.player.runestone_bag)),
         ):
             if runestone.nickname:
-                console.print(f"{i + 1}. {runestone.nickname}")
+                console.print(Text.assemble(f"{i + 1}. ", runestone.nickname))
             else:
-                console.print(f"{i + 1}. {runestone}")
+                console.print(Text.assemble(f"{i + 1}. ", runestone.info))
 
         user_input = input_processing.get_numbers_from_input(
             "",
@@ -67,11 +58,111 @@ def choose_runes(world_state: runes.WorldState):
             runestone_choices = [
                 world_state.player.runestone_bag[int(i) - 1] for i in user_input
             ]
-            slprint("you have chosen:")
+            slprint("you have chosen:\n")
             for rune in runestone_choices:
-                slprint(rune)
+                slprint(Text.assemble(rune.nickname or rune.info))
 
             return runestone_choices
+
+
+# generates rewards for the player to pick from after a battle. there will be three, with one always guaranteed to be a new rune
+def get_rewards(world_state: runes.WorldState):
+    reward_list = []
+
+    # the rune
+    reward_list.append(random.choice(runes.ALL_RUNES)(None))
+
+    for i in range(2):
+        reward_type = random.choice(["rune", "runestone", "spell"])
+
+        if reward_type == "rune":
+            reward_list.append(random.choice(runes.ALL_RUNES)(None))
+
+        elif reward_type == "runestone":
+            reward_list.append(runes.Runestone.generate_random_runestone())
+
+        elif reward_type == "spell":
+            reward_list.append(
+                random.choice(
+                    [
+                        spell
+                        for spell in runes.ALL_SPELLS
+                        if spell
+                        not in [type(spell) for spell in world_state.player.spells]
+                    ]
+                )()
+            )
+
+    slprint("Choose your reward. Enter 'skip' to skip the reward")
+
+    for i, reward in enumerate(reward_list, 1):
+        slprint(Text.assemble(f"{i}. ", reward.info))
+
+    reward_choice = input_processing.get_numbers_from_input(
+        minimum=1, maximum=len(reward_list), choice_amount=1, exceptions=["skip"]
+    )[0]
+
+    if reward_choice != "skip":
+        reward_choice = reward_list[int(reward_choice) - 1]
+
+        if isinstance(reward_choice, runes.Runestone):
+            slprint(Text.assemble("You chose", reward_choice.info))
+
+            if input_processing.get_confirmation(
+                "would you like to give it a nickname for ease of use?"
+            ):
+                reward_choice.give_nickname()
+
+            slprint(
+                Text.assemble(
+                    "Great! ",
+                    reward_choice.nickname or reward_choice.info,
+                    " added to your bag",
+                )
+            )
+            world_state.player.runestone_bag.append(reward_choice)
+            print(world_state.player.runestone_bag.explain())
+
+        elif issubclass(type(reward_choice), runes.Rune):
+            print(
+                "Which runestone would you like to inscribe this rune onto? Enter 'skip' to skip this"
+            )
+
+            print(world_state.player.runestone_bag.explain())
+
+            engrave_choice = input_processing.get_numbers_from_input(
+                minimum=1,
+                maximum=len(world_state.player.runestone_bag),
+                choice_amount=1,
+                exceptions=["skip"],
+            )[0]
+
+            if engrave_choice != "skip":
+                engrave_choice = player.runestone_bag[int(engrave_choice) - 1]
+
+                print(
+                    Text.assemble(
+                        "You engrave ",
+                        Text(reward_choice.name, reward_choice.colour),
+                        " onto your ",
+                        engrave_choice.nickname or engrave_choice.info,
+                    )
+                )
+
+                engrave_choice.add_runes([])
+
+            else:
+                print("you decide not to engrave the rune")
+
+        elif issubclass(type(reward_choice), runes.Spell):
+            print(
+                Text.assemble(
+                    "You learn",
+                    Text(reward_choice.name, reward_choice.colour or "purple"),
+                )
+            )
+
+            player.spells.append(reward_choice)
 
 
 # battle function for fighting enemies.
@@ -81,6 +172,7 @@ def battle(world_state: runes.WorldState):
     slprint("so do you\n")
 
     battle_ongoing = True
+    battle_end = ""
 
     # to count how many rounds
     turn = 0
@@ -89,6 +181,9 @@ def battle(world_state: runes.WorldState):
         turn += 1
 
         slprint(f"\n---turn {turn}---\n")
+        world_state.player.arcana = 0
+
+        slprint(f"you have [green]{world_state.player.current_hp} hp[/green] left\n")
 
         # prints what the enemy will do
         slprint(
@@ -106,28 +201,28 @@ def battle(world_state: runes.WorldState):
             runestone_confirmation = input_processing.get_confirmation()
 
             if runestone_confirmation:
-                slprint("runestones selected")
+                slprint("runestones selected\n")
                 break
 
             else:
-                slprint("All right. Choose again")
+                slprint("All right. Choose again\n")
                 runestone_choices = choose_runes(world_state)
 
-        # choose the stones to throw (in order)
+        # choose the stones to throw, one by one (in order)
         if runestone_choices:
             end_turn = False
             for i in range(len(runestone_choices)):
                 slprint(
                     f"you draw your runestones from your bag... which would you like to throw {'next' if i != 0 else 'first'}? Press ? for more info,"
-                    "and type 'end' to end your throw phase"
+                    "and type 'end' to end your throw phase\n"
                 )
 
                 # lists the runes
                 for i, runestone in enumerate(runestone_choices):
                     if runestone.nickname:
-                        slprint(f"{i + 1}. {runestone.nickname}")
+                        slprint(Text.assemble(f"{i + 1}.", runestone.nickname))
                     else:
-                        slprint(f"{i + 1}. {runestone}")
+                        slprint(Text.assemble(f"{i + 1}.", runestone.info))
 
                 throw_rune_chosen = False
 
@@ -164,80 +259,107 @@ def battle(world_state: runes.WorldState):
                     break
 
         # spell casting phase
+        if world_state.current_enemy.current_hp <= 0:
+            battle_ongoing = False
+            world_state.current_enemy.current_hp = 0
 
-        slprint("\n ---spell casting phase---\n")
-        spell_choice = None  # this is to ensure it is bound
-        spell_cast = True
+        else:
+            slprint("\n---spell casting phase---\n")
+            spell_choice = None  # this is to ensure it is bound
+            spell_cast = True
 
-        # this checks in case the player cannot cast any spells
-        for spell in world_state.player.spells:
-            if player.arcana >= spell.arcana_cost:
-                spell_cast = False
+            # this checks in case the player cannot cast any spells
+            for spell in world_state.player.spells:
+                if player.arcana >= spell.arcana_cost:
+                    spell_cast = False
 
-        # if they can't, it skips the next bit
-        if spell_cast:
-            slprint(
-                "you do not have enough [purple]ARCANA[/purple] to cast any of your spells\n"
-            )
-
-        while not spell_cast:
-            spell_chosen = False
-
-            # loops to get a spell choice
-            while not spell_chosen:
+            # if they can't, it skips the next bit
+            if spell_cast:
                 slprint(
-                    f"You have [purple]{world_state.player.arcana} ARCANA[/purple]. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip"
+                    "you do not have enough [purple]ARCANA[/purple] to cast any of your spells\n"
                 )
 
-                # prints the spells
-                for i, spell in enumerate(player.spells):
+            while not spell_cast:
+                spell_chosen = False
+
+                # loops to get a spell choice
+                while not spell_chosen:
                     slprint(
-                        f"{i + 1}. {spell.name}, costing [purple]{spell.arcana_cost} ARCANA[/purple]"
+                        f"You have [purple]{world_state.player.arcana} ARCANA[/purple]. Choose a spell to cast. Enter ? for more detail, and type 'end' to skip"
                     )
 
-                # gets input
-                spell_choice = input_processing.get_numbers_from_input(
-                    "", 1, len(player.spells) + 1, False, 1, ["?", "end"]
-                )[0]
+                    # prints the spells
+                    for i, spell in enumerate(player.spells):
+                        slprint(
+                            f"{i + 1}. {spell.name}, costing [purple]{spell.arcana_cost} ARCANA[/purple]"
+                        )
 
-                if spell_choice == "?":
-                    slprint(player.spells.explain)
+                    # gets input
+                    spell_choice = input_processing.get_numbers_from_input(
+                        "", 1, len(player.spells) + 1, False, 1, ["?", "end"]
+                    )[0]
 
-                elif spell_choice == "end":
-                    spell_choice = None
-                    spell_chosen = True
+                    if spell_choice == "?":
+                        slprint(player.spells.explain)
+
+                    elif spell_choice == "end":
+                        spell_choice = None
+                        spell_chosen = True
+
+                    else:
+                        spell_choice = player.spells[
+                            int(spell_choice) - 1
+                        ]  # the int is in there to prevent unneeded error flags
+                        spell_chosen = True
+
+                # casts the spell. The isinstance is there to prevent error flags
+                if isinstance(spell_choice, runes.Spell):
+                    if player.arcana >= spell_choice.arcana_cost:
+                        slprint(
+                            f"you raise your hands to the sky as [purple]ARCANA[/purple] flows around you. \n You cast {spell_choice.name}"
+                        )
+                        spell_choice.cast(world_state)
+                        spell_cast = True
+
+                    # if they don't have enough arcana, they must choose again (or choose to end)
+                    else:
+                        slprint(
+                            "you do not have enough [purple]ARCANA[/purple] to cast {spell_choice.name}"
+                        )
+                        slprint("please choose again")
 
                 else:
-                    spell_choice = player.spells[
-                        int(spell_choice) - 1
-                    ]  # the int is in there to prevent unneeded error flags
-                    spell_chosen = True
-
-            # casts the spell. The isinstance is there to prevent error flags
-            if isinstance(spell_choice, runes.Spell):
-                if player.arcana >= spell_choice.arcana_cost:
-                    slprint(
-                        f"you raise your hands to the sky as [purple]ARCANA[/purple] flows around you. \n You cast {spell_choice.name}"
-                    )
-                    spell_choice.cast(world_state)
+                    slprint("you decide not to cast a spell")
                     spell_cast = True
 
-                # if they don't have enough arcana, they must choose again (or choose to end)
-                else:
-                    slprint(
-                        "you do not have enough [purple]ARCANA[/purple] to cast {spell_choice.name}"
-                    )
-                    slprint("please choose again")
+            if world_state.current_enemy.current_hp <= 0:
+                battle_ongoing = False
+                world_state.current_enemy.current_hp = 0
+                battle_end = "win"
 
             else:
-                slprint("you decide not to cast a spell")
-                spell_cast = True
+                # enemy turn
 
-        # enemy turn
+                slprint("\n---enemy turn---\n")
 
-        slprint("\n---enemy turn---\n")
+                world_state.current_enemy.take_turn(world_state)
 
-        world_state.current_enemy.take_turn(world_state)
+                if world_state.player.current_hp <= 0:
+                    player.current_hp = 0
+                    battle_ongoing = False
+                    battle_end = "loss"
+
+    if battle_end == "loss":
+        slprint(
+            "[bold red]you have been slain...[/bold red] \n"
+            "Your journey is over... better luck next time"
+        )
+        return "loss"
+
+    elif battle_end == "win":
+        slprint("[bold green]You are victorious![/bold green]")
+        slprint("Now, it is time for you to choose a [bold gold1]reward[/bold gold1]")
+        get_rewards(world_state)
 
 
 # simple function to initialise the player's gear
@@ -269,7 +391,7 @@ def make_starter_kit(world: runes.WorldState):
 
 
 if __name__ == "__main__":
-    player = runes.Player(runes.RunestoneBag([]), runes.SpellBook([]), 2, 0)
+    player = runes.Player(runes.RunestoneBag([]), runes.SpellBook([]), 2, 0, 100)
     world = runes.WorldState(player, runes.Chicken())
     make_starter_kit(world)
 
@@ -282,5 +404,7 @@ if __name__ == "__main__":
     slprint("\nthese are your runes:")
     slprint(player.runestone_bag.explain())
     time.sleep(0.5)
+
+    get_rewards(world_state=world)
 
     battle(world)

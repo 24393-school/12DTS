@@ -1,28 +1,39 @@
+import random
+from pdb import run
+
 from rich import print as pprint
 from rich.text import Text
 
-STRING_FORMATTING_TABLE = str.maketrans("", "", "[]'")
+import runes
+
+# STRING_FORMATTING_TABLE = str.maketrans("", "", "[]'")
 
 
-class obj:
-    def __init__(self, name: str, colour: str):
-        self.name = name
+# class obj:
+#     def __init__(self, name: str, colour: str):
+#         self.name = name
 
-        self.colour = colour
+#         self.colour = colour
 
-        # self.name.stylize(f"bold {self.colour}")
+#         # self.name.stylize(f"bold {self.colour}")
 
 
-x = obj("xx", "magenta")
-y = obj("yy", "cyan")
-z = obj("zz", "yellow")
+# x = obj("xx", "magenta")
+# y = obj("yy", "cyan")
+# z = obj("zz", "yellow")
 
-list = [x, y, z]
+# list = [x, y, z]
 
-print(f"{[item.name for item in list]}".translate(STRING_FORMATTING_TABLE))
+# print(f"{[item.name for item in list]}".translate(STRING_FORMATTING_TABLE))
 
-q = Text("Hi", "bold")
+# q = Text("Hi", "bold")
 
-q.append(Text.assemble(*[Text(item.name, f" {item.colour}") for item in list]))
+# q.append(Text.assemble(*[Text(item.name, f" {item.colour}") for item in list]))
 
-pprint(q)
+# pprint(q)
+#
+
+x = runes.ArcaneBolt()
+
+print(type(x))
+print(runes.ArcaneBolt)

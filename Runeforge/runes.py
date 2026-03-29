@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import random
+import time
 import typing
 
 # text colour library
 from rich import print
+from rich.console import Console
 from rich.text import Text
+
+console = Console(highlight=False)
 
 # will phase this out soon as I'm switching to Rich
 COLOURS = {
@@ -22,6 +26,11 @@ COLOURS = {
 STRING_FORMATTING_TABLE = str.maketrans("", "", "[]'")
 
 
+def slprint(string: str | Text):
+    time.sleep(0.5)
+    console.print(string)
+
+
 # going to use your arcana to modify une effects, just here so I don't forget
 # spell class, to use at end of turn. Each has a name and a cost, with an optional colour and/or info
 class Spell:
@@ -29,14 +38,24 @@ class Spell:
         self,
         name,
         arcana_cost: int,
-        colour: list[str] | None = None,
-        info: str | None = None,
+        colour: str | None = None,
+        tooltip: str | None = None,
     ):
         self.name = name
         self.arcana_cost = arcana_cost
         self.colour = colour
 
-        self.info = info or ""
+        self.tooltip = tooltip or ""
+
+    @property
+    def info(self):
+        return Text.assemble(
+            # f"[{self.colour if self.colour else 'purple'}]{self.name}[/{self.colour if self.colour else 'purple'}]. A [{self.colour or 'purple'}]{self.colour or 'colourless'}[/{self.colour or 'purple'}] spell that {self.tooltip}\n"
+            Text(f"{self.name} ", f"{self.colour or 'purple'}"),
+            "A ",
+            Text(f"{self.colour or 'colourless'} ", f"{self.colour or 'purple'}"),
+            f"spell that {self.tooltip}",
+        )
 
     def cast(self, world_state: WorldState):
         world_state.player.arcana -= self.arcana_cost
@@ -48,16 +67,32 @@ class Spell:
 # most basic spell. uses arcana and hits an enemy
 class ArcaneBolt(Spell):
     def __init__(self):
-        super().__init__("Arcane Bolt", 5, None, "Deals arcane damage to your enemy")
+        super().__init__(
+            "Arcane Bolt", 5, None, "deals [purple]arcane[/purple] damage to your enemy"
+        )
 
     def cast(self, world_state: WorldState):
         super().cast(world_state)
-        print(
-            f"you channel your [purple]ARCANA[/purple] into a bolt of energy, and loose it at the enemy"
+        slprint(
+            "you channel your [purple]ARCANA[/purple] into a bolt of energy, and loose it at the enemy"
         )
         damage = random.randint(5, 10)
-        print(f"[red]{damage} damage [/red]")
+        slprint(f"[red]{damage} damage [/red]")
         world_state.current_enemy.current_hp -= damage
+        if world_state.current_enemy.current_hp <= 0:
+            slprint(
+                f"you [red]defeat[/red] the mighty {world_state.current_enemy.name}"
+            )
+
+        else:
+            slprint(
+                f"the mighty {world_state.current_enemy.name} has [red]{world_state.current_enemy.current_hp} hp left[/red]"
+            )
+
+
+class HealSpell(Spell):
+    def __init__(self):
+        super().__init__("Heal", 5, "green", "heals")
 
 
 # class for enhancements for rune. Going to give bonuses or abilities etc. WIP. unused currently.
@@ -87,6 +122,16 @@ class Rune:
 
         ## self.enhancement: Enhancement = enhancement      This will be where enhancements go (once i ad them)
 
+    @property
+    def info(self):
+        return Text.assemble(
+            # f"[{self.colour}]{self.name}[/{self.colour}]. A [{self.colour}]{self.colour}[/{self.colour}] rune that {self.tooltip}\n"
+            Text(f"{self.name}", f"{self.colour}"),
+            ". A ",
+            Text(self.colour, self.colour),
+            f" rune that {self.tooltip}",
+        )
+
     # this is the base method to be overriden by subclasses
     def activate(self, world_state: WorldState):
         pass
@@ -102,13 +147,17 @@ class Rune:
 class IsazRune(Rune):
     def __init__(self, parent: Runestone):
         super().__init__(
-            parent, "Isaz", "ᛁ", "blue", "turns your runes blue this round"
+            parent,
+            "Isaz",
+            "ᛁ",
+            "blue",
+            "grants [purple]ARCANA[/purple], and turns your runes [blue]blue[/blue] this round",
         )
 
     def activate(self, world_state: WorldState):
-        print(
-            "Ice forms over all of your runestones, and snow begins to fly in the air...  [purple] +10 ARCANA [/purple], and all other "
-            "runes will be considered blue this round"
+        slprint(
+            "[blue]Ice[/blue] forms over all of your runestones, and snow begins to fly in the air...  [purple] +10 ARCANA [/purple], and all other "
+            "runes will be considered [blue]blue[/blue] this round"
         )
         world_state.player.arcana += 10
         for runestone in world_state.player.runestone_bag:
@@ -121,9 +170,15 @@ class SowuloRune(Rune):
         super().__init__(parent, "Sōwulō", "ᛊ", "yellow", "")
 
     def activate(self, world_state: WorldState):
-        print(
-            "radiant light shines from the heavens, and your soul glows bright with warmth"
+        slprint(
+            "[yellow]Radiant light[/yellow] shines from the heavens, and your soul glows bright with warmth. [green]Heal 10 hp[/green], and gain [purple]5 ARCANA[/purple]"
         )
+        world_state.player.current_hp += 10
+        if world_state.player.current_hp > world_state.player.max_hp:
+            world_state.player.current_hp = world_state.player.max_hp
+
+        print(f"you now have [green]{world_state.player.current_hp} hp[/green] left")
+        world_state.player.arcana += 5
 
 
 # this will be the "die" that the runes are on. it will be 'thrown' to get a rune, which is then triggeres
@@ -139,12 +194,13 @@ class Runestone:
     RUNESTONE_TYPE_DATA = {
         "base": ("stone", 3),
         "coin": ("metal", 2),
+        "knucklebone": ("bone", 4),
     }  # a dict of the base rune templates
 
     @property
     def info(
         self,
-    ):  # this property gives the longhand information about the runes on the runestone. The nasty list comprehension ternery is for nice formmating
+    ):  # this property gives the longhand information about the runes on the runestone. The nasty list comprehension ternery is for nice formmating, so I won't go into the full detail of it
 
         return Text.assemble(
             f" {self.sides}-sided {self.material} runestone, with the runes ",
@@ -166,33 +222,60 @@ class Runestone:
             [],
         )
 
+    # creates a randomly generated runestone with random runes.
+    @classmethod
+    def generate_random_runestone(cls) -> Runestone:
+
+        new_runestone = cls.create_runestone(
+            random.choice(["base", "coin", "knucklebone"])
+        )
+
+        rune_count = int(
+            random.normalvariate(new_runestone.sides / 2, new_runestone.sides / 6)
+        )
+
+        new_runes = random.choices(ALL_RUNES, k=rune_count)
+
+        new_runestone.add_runes(new_runes)
+
+        return new_runestone
+
     # gives the runestone a nickname (which is the default str)
     def give_nickname(self):
         self.nickname = input(f"enter a nickname for your {self.info} for ease of use ")
 
-    # adds a runes to blank sides of the runestone
-    def add_runes(self, runes: list[typing.Callable]):
+    # adds a runes to blank sides of the runestone, either taking the TYPE of rune it is eg. IsazRune, SowuloRune, or an instance of a rune subclass
+    def add_runes(self, runes: list[Rune] | list[typing.Callable]):
         for rune in runes:
-            if len(self.runes) < self.sides:
-                self.runes.append(rune(self))
+            if isinstance(rune, Rune):
+                if len(self.runes) < self.sides:
+                    self.runes.append(rune)
+                    rune.parent = self
+
+                else:
+                    slprint("your rune is full!")
 
             else:
-                print("your rune is full!")
+                if len(self.runes) < self.sides:
+                    self.runes.append(rune(self))
+
+                else:
+                    slprint("your rune is full!")
 
     # 'rolls' the runestone
     def throw(self, world_state: WorldState):
 
-        print("you toss the runestone high into the air...")
+        slprint("you toss the runestone high into the air...")
 
         # picks a random side...
         choice = random.randint(0, self.sides - 1)
         if choice >= len(self.runes):
-            print("it comes up blank")
+            slprint("it comes up blank")
         else:
             face = self.runes[choice]
 
-            print(
-                f"it lands on the glyph {face.glyph},\nThe rune {face.name}\nThe rune begins to glow with [{face.colour}]{face.colour}[/{face.colour}] power..."
+            slprint(
+                f"it lands on the glyph [{face.colour}]{face.glyph}[/{face.colour}],\nThe rune {face.name}\nThe rune begins to glow with [{face.colour}]{face.colour}[/{face.colour}] power..."
             )
 
             # and activates it
@@ -231,7 +314,7 @@ class SpellBook(list):
         explanation = ""
 
         for i, spell in enumerate(self, 1):
-            explanation += f"{i}. {spell.name}: A {spell.colour if spell.colour else 'colourless'} spell, costing [purple]{spell.arcana_cost} ARCANA[/purple]. {spell.info}"
+            explanation += f"{i}. {spell.info}"
 
         return explanation
 
@@ -253,13 +336,13 @@ class Enemy:
     # base attack, which damages the player based off a base damage stat, and the modifier
     def attack(self, base_attack: int, world_state: WorldState):
         damage = base_attack + self.attack_modifier
-        print(f"The mighty {self.name} attacks for [red]{damage} damage [/red]")
+        slprint(f"The mighty {self.name} attacks for [red]{damage} damage [/red]")
         world_state.player.current_hp -= damage
         if world_state.player.current_hp <= 0:
-            print("you are slain...")
+            slprint("you are slain...")
 
         else:
-            print(f"you now have {world_state.player.current_hp} hp left")
+            slprint(f"you now have [red]{world_state.player.current_hp} hp[/red] left")
 
     # base method to be overriden
     def take_turn(self, world_state):
@@ -276,13 +359,13 @@ class Chicken(Enemy):
     def action_foresight(self) -> str:
         match self.sequence_step:
             case 0:
-                return f"planning to attack for {5 + self.attack_modifier} damage"
+                return f"planning to [red]attack[/red] for [red]{5 + self.attack_modifier} damage[/red]"
 
             case 1:
-                return "planning to heal for 5"
+                return "planning to [green]heal[/green] for [green]5 hp[/green]"
 
             case 2:
-                return f"planning to attack for {10 + self.attack_modifier} damage"
+                return f"planning to [red]attack[/red] for [red]{10 + self.attack_modifier} damage[/red]"
 
         return "doing nothing"
 
@@ -291,11 +374,12 @@ class Chicken(Enemy):
         match self.sequence_step:
             case 0:
                 self.attack(5, world_state)
-                self.sequence_step = 1
+                self.sequence_step = 1 if self.current_hp < self.max_hp else 2
 
             case 1:
-                print("The mighty chicken heals 5 hp")
+                slprint("The mighty chicken [green]heals 5 hp[/green]")
                 self.current_hp += 5
+                slprint(f"It now has [red]{self.current_hp} hp[/red] left")
                 self.sequence_step = 2
 
             case 2:
@@ -329,3 +413,12 @@ class WorldState:
     def __init__(self, player: Player, current_enemy: Enemy):
         self.player = player
         self.current_enemy = current_enemy
+
+
+# lists of all of the types of things
+
+ALL_RUNES = [IsazRune, SowuloRune]
+
+ALL_ENEMIES = [Chicken]
+
+ALL_SPELLS = [ArcaneBolt, HealSpell]
