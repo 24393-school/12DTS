@@ -127,7 +127,11 @@ class Rune:
 
     @property
     def colour(self):
-        return self.parent.mask or self.truecolour
+        if self.parent:
+            return self.parent.mask or self.truecolour
+
+        else:
+            return self.truecolour
 
     @property
     def info(self):
@@ -198,11 +202,94 @@ class SowuloRune(Rune):
             "[yellow]Radiant light[/yellow] shines from the heavens, and your [yellow]SOUL[/yellow] glows bright with warmth... [green]Heal 10 hp[/green], and gain [purple]5 ARCANA[/purple]"
         )
         world_state.player.current_hp += 10
-        if world_state.player.current_hp > world_state.player.max_hp:
-            world_state.player.current_hp = world_state.player.max_hp
+
+        world_state.player.current_hp = min(
+            world_state.player.current_hp, world_state.player.max_hp
+        )
 
         slprint(f"you now have [green]{world_state.player.current_hp} hp[/green] left")
         world_state.player.arcana += 5
+
+
+class WynnRune(Rune):
+    def __init__(self, parent: Runestone):
+        super().__init__(
+            parent,
+            "Wynn",
+            "ᚹ",
+            "green",
+            "Grants a choice of either ARCANA, or hp",
+            "The Bounty",
+        )
+
+    def activate(self, world_state: WorldState):
+        slprint(
+            "the ground cracks, and [green]vines[/green] burst from the earth... Would you like:\n"
+        )
+        slprint("1. Healing fruit (Heal 20 hp)\n")
+        slprint("2. [purple]Arcane[/purple] fruit")
+        choice = input_processing.get_numbers_from_input(
+            minimum=1, maximum=2, choice_amount=1
+        )[0]
+
+        match choice:
+            case 1:
+                slprint(
+                    "The vines bloom with [green]invigorating apples[/green]...  [green]Heal 20 hp[/green]"
+                )
+                world_state.player.current_hp += 20
+                if world_state.player.current_hp > world_state.player.max_hp:
+                    world_state.player.current_hp = world_state.player.max_hp
+
+                slprint(
+                    f"you now have [green]{world_state.player.current_hp} hp[/green] left"
+                )
+
+            case 2:
+                slprint(
+                    "The vines bloom with [purple]energizing plums[/purple]...  Gain [purple]20 ARCANA[/purple]"
+                )
+                world_state.player.arcana += 20
+
+
+class PeorthRune(Rune):
+    def __init__(self, parent):
+        super().__init__(
+            parent, "Peorth", "ᛈ", "red", "grants a random effect", "The Gamble"
+        )
+
+    def activate(self, world_state: WorldState):
+        chance = random.random()
+
+        match chance:
+            case chance if chance <= 0.1:
+                print(
+                    "Charming song echoes through your ears... Your enemy's [red]attack[/red] has been reduced by 2"
+                )
+                world_state.current_enemy.attack_modifier -= 2
+
+            case chance if 0.1 < chance <= 0.3:
+                print(
+                    "A painfull bolt of [purple]ARCANA[/purple] jolts through your veins... [red]Lose 5 hp[/red], but gain [purple]15 ARCANA[/purple]"
+                )
+
+            case chance if 0.3 < chance <= 0.4:
+                print(
+                    f"A spout of [orange]liquid fire[orange] leaps from the runestone towards the enemy {world_state.current_enemy.name}, engulfing it in [orange]flame[/orange]... [red]15 damage[/red]"
+                )
+
+                if world_state.current_enemy.current_hp <= 0:
+                    print(
+                        f"You [red]defeat[/red] the enemy {world_state.current_enemy.name}"
+                    )
+
+                else:
+                    print(
+                        f"the enemy {world_state.current_enemy.name} has [red]{world_state.current_enemy.current_hp} hp[/red] left"
+                    )
+
+            case chance if 0.4 < chance <= 0.5:
+                print("Whoops! All Ones")
 
 
 # this will be the "die" that the runes are on. it will be 'thrown' to get a rune, which is then triggeres
@@ -359,7 +446,7 @@ class Enemy:
 
     # base attack, which damages the player based off a base damage stat, and the modifier
     def attack(self, base_attack: int, world_state: WorldState):
-        damage = base_attack + self.attack_modifier
+        damage = max(base_attack + self.attack_modifier, 1)
         slprint(f"The mighty {self.name} attacks for [red]{damage} damage [/red]")
         world_state.player.current_hp -= damage
         if world_state.player.current_hp <= 0:
@@ -403,6 +490,7 @@ class Chicken(Enemy):
             case 1:
                 slprint("The mighty chicken [green]heals 5 hp[/green]")
                 self.current_hp += 5
+                self.current_hp = min(self.current_hp, self.max_hp)
                 slprint(f"It now has [red]{self.current_hp} hp[/red] left")
                 self.sequence_step = 2
 

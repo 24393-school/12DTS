@@ -173,16 +173,6 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy, rewards: list):
         )  # the type declaration prevents error flags
 
         # loops to get confirmation
-        while True:
-            runestone_confirmation = input_processing.get_confirmation()
-
-            if runestone_confirmation:
-                slprint("runestones selected\n")
-                break
-
-            else:
-                slprint("All right. Choose again\n")
-                runestone_choices = choose_runes(world_state)
 
         # choose the stones to throw, one by one (in order)
         if runestone_choices:
@@ -232,6 +222,11 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy, rewards: list):
 
                 # gets out of the for loop if end has been selected
                 if end_turn:
+                    break
+
+                if (
+                    world_state.current_enemy.current_hp <= 0
+                ):  # breaks if the enemy has been killed
                     break
 
         # spell casting phase
