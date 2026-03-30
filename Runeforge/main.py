@@ -1,10 +1,6 @@
 # imports
 import random
-import sys
 import time
-from ast import Sub
-from profile import run
-from webbrowser import get
 
 from rich import print
 from rich.console import Console
@@ -66,32 +62,7 @@ def choose_runes(world_state: runes.WorldState):
 
 
 # generates rewards for the player to pick from after a battle. there will be three, with one always guaranteed to be a new rune
-def get_rewards(world_state: runes.WorldState):
-    reward_list = []
-
-    # the rune
-    reward_list.append(random.choice(runes.ALL_RUNES)(None))
-
-    for i in range(2):
-        reward_type = random.choice(["rune", "runestone", "spell"])
-
-        if reward_type == "rune":
-            reward_list.append(random.choice(runes.ALL_RUNES)(None))
-
-        elif reward_type == "runestone":
-            reward_list.append(runes.Runestone.generate_random_runestone())
-
-        elif reward_type == "spell":
-            reward_list.append(
-                random.choice(
-                    [
-                        spell
-                        for spell in runes.ALL_SPELLS
-                        if spell
-                        not in [type(spell) for spell in world_state.player.spells]
-                    ]
-                )()
-            )
+def get_rewards(world_state: runes.WorldState, reward_list: list):
 
     slprint("Choose your reward. Enter 'skip' to skip the reward")
 
@@ -144,12 +115,12 @@ def get_rewards(world_state: runes.WorldState):
                     Text.assemble(
                         "You engrave ",
                         Text(reward_choice.name, reward_choice.colour),
-                        " onto your ",
+                        " onto your",
                         engrave_choice.nickname or engrave_choice.info,
                     )
                 )
 
-                engrave_choice.add_runes([])
+                engrave_choice.add_runes([reward_choice])
 
             else:
                 print("you decide not to engrave the rune")
@@ -157,7 +128,7 @@ def get_rewards(world_state: runes.WorldState):
         elif issubclass(type(reward_choice), runes.Spell):
             print(
                 Text.assemble(
-                    "You learn",
+                    "You learn the spell ",
                     Text(reward_choice.name, reward_choice.colour or "purple"),
                 )
             )
@@ -166,7 +137,9 @@ def get_rewards(world_state: runes.WorldState):
 
 
 # battle function for fighting enemies.
-def battle(world_state: runes.WorldState):
+def battle(world_state: runes.WorldState, enemy: runes.Enemy, rewards: list):
+    world_state.current_enemy = enemy
+
     slprint(f"An enemy approaches: a mighty {world_state.current_enemy.name}")
     slprint("they draw their runestones")
     slprint("so do you\n")
@@ -182,6 +155,9 @@ def battle(world_state: runes.WorldState):
 
         slprint(f"\n---turn {turn}---\n")
         world_state.player.arcana = 0
+        world_state.thrown_runes = runes.RunestoneBag([])
+        for runestone in player.runestone_bag:
+            runestone.mask = None
 
         slprint(f"you have [green]{world_state.player.current_hp} hp[/green] left\n")
 
@@ -248,11 +224,11 @@ def battle(world_state: runes.WorldState):
                     else:
                         thrown_rune = runestone_choices[int(user_input) - 1]
                         thrown_rune.throw(world_state)
+
+                        world_state.thrown_runes.append(thrown_rune)
+                        runestone_choices.remove(thrown_rune)
+
                         throw_rune_chosen = True
-                        runestone_choices.pop(runestone_choices.index(thrown_rune))
-                        world_state.current_enemy.current_hp -= (
-                            world_state.player.current_attack
-                        )
 
                 # gets out of the for loop if end has been selected
                 if end_turn:
@@ -359,7 +335,56 @@ def battle(world_state: runes.WorldState):
     elif battle_end == "win":
         slprint("[bold green]You are victorious![/bold green]")
         slprint("Now, it is time for you to choose a [bold gold1]reward[/bold gold1]")
-        get_rewards(world_state)
+        get_rewards(world_state, rewards)
+
+        return "win"
+
+
+def create_encounter(world_state: runes.WorldState):
+
+    encounter_type = random.choices(
+        ["battle"]
+    )[
+        0
+    ]  # this will be in case I want to add other types of encounters, like rests or free tresure etc
+
+    if encounter_type == "battle":
+        enemy = random.choice(runes.NORMAL_ENEMIES)(
+            attack_mod=random.randint(0, 10), hp_mod=random.randint(0, 10)
+        )
+
+        reward_list = []
+
+        # the rune
+        reward_list.append(random.choice(runes.ALL_RUNES)(None))
+
+        for i in range(2):
+            reward_type = random.choice(["rune", "runestone", "spell"])
+
+            if reward_type == "rune":
+                reward_list.append(random.choice(runes.ALL_RUNES)(None))
+
+            elif reward_type == "runestone":
+                reward_list.append(runes.Runestone.generate_random_runestone())
+
+            elif reward_type == "spell":
+                reward_list.append(
+                    random.choice(
+                        [
+                            spell
+                            for spell in runes.ALL_SPELLS
+                            if spell
+                            not in (
+                                [type(spell) for spell in world_state.player.spells]
+                                or [type(spell) for spell in reward_list]
+                            )
+                        ]
+                    )()
+                )
+
+        return runes.Battle(enemy, reward_list)
+
+    return runes.Encounter()
 
 
 # simple function to initialise the player's gear
@@ -392,10 +417,8 @@ def make_starter_kit(world: runes.WorldState):
 
 if __name__ == "__main__":
     player = runes.Player(runes.RunestoneBag([]), runes.SpellBook([]), 2, 0, 100)
-    world = runes.WorldState(player, runes.Chicken())
+    world = runes.WorldState(player, runes.Enemy("blank", 1, 1))
     make_starter_kit(world)
-
-    ## slprint(starter_runestones[0])
 
     slprint("\nthese are your spells:")
     slprint(player.spells.explain())
@@ -405,6 +428,9 @@ if __name__ == "__main__":
     slprint(player.runestone_bag.explain())
     time.sleep(0.5)
 
-    get_rewards(world_state=world)
+    game_running = True
+    while game_running:
+        encounter = create_encounter(world)
 
-    battle(world)
+        if isinstance(encounter, runes.Battle):
+            battle(world, encounter.enemy, encounter.rewards)

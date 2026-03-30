@@ -6,9 +6,10 @@ import time
 import typing
 
 # text colour library
-from rich import print
 from rich.console import Console
 from rich.text import Text
+
+import input_processing
 
 console = Console(highlight=False)
 
@@ -111,25 +112,34 @@ class Rune:
         name: str,  # this is the runes name (not glyph)
         glyph: str,  # this is the runic glyph
         colour: str,
-        tooltip: str,  # a brief description
+        tooltip: str | Text,  # a brief description
+        meaning: str,  # flavour
     ):
         self.parent = parent
-        self.colour = colour
+
         self.name = name
         self.glyph = glyph
-        self.colour = colour
+        self.truecolour = colour
         self.tooltip = tooltip
+        self.meaning = meaning
 
         ## self.enhancement: Enhancement = enhancement      This will be where enhancements go (once i ad them)
+
+    @property
+    def colour(self):
+        return self.parent.mask or self.truecolour
 
     @property
     def info(self):
         return Text.assemble(
             # f"[{self.colour}]{self.name}[/{self.colour}]. A [{self.colour}]{self.colour}[/{self.colour}] rune that {self.tooltip}\n"
             Text(f"{self.name}", f"{self.colour}"),
+            ": ",
+            Text(self.meaning, self.colour),
             ". A ",
             Text(self.colour, self.colour),
-            f" rune that {self.tooltip}",
+            " rune that ",
+            self.tooltip,
         )
 
     # this is the base method to be overriden by subclasses
@@ -151,7 +161,14 @@ class IsazRune(Rune):
             "Isaz",
             "ᛁ",
             "blue",
-            "grants [purple]ARCANA[/purple], and turns your runes [blue]blue[/blue] this round",
+            Text.assemble(
+                "grants ",
+                Text("ARCANA", "purple"),
+                " and turns your runes ",
+                Text("blue", "blue"),
+                " this round\n",
+            ),
+            "The Rime",
         )
 
     def activate(self, world_state: WorldState):
@@ -167,17 +184,24 @@ class IsazRune(Rune):
 # sun rune. no effect currently
 class SowuloRune(Rune):
     def __init__(self, parent: Runestone):
-        super().__init__(parent, "Sōwulō", "ᛊ", "yellow", "")
+        super().__init__(
+            parent,
+            "Sōwulō",
+            "ᛊ",
+            "yellow",
+            Text.assemble("grants ", Text("ARCANA", "purple"), " and heals you"),
+            "The Soul",
+        )
 
     def activate(self, world_state: WorldState):
         slprint(
-            "[yellow]Radiant light[/yellow] shines from the heavens, and your soul glows bright with warmth. [green]Heal 10 hp[/green], and gain [purple]5 ARCANA[/purple]"
+            "[yellow]Radiant light[/yellow] shines from the heavens, and your [yellow]SOUL[/yellow] glows bright with warmth... [green]Heal 10 hp[/green], and gain [purple]5 ARCANA[/purple]"
         )
         world_state.player.current_hp += 10
         if world_state.player.current_hp > world_state.player.max_hp:
             world_state.player.current_hp = world_state.player.max_hp
 
-        print(f"you now have [green]{world_state.player.current_hp} hp[/green] left")
+        slprint(f"you now have [green]{world_state.player.current_hp} hp[/green] left")
         world_state.player.arcana += 5
 
 
@@ -188,7 +212,7 @@ class Runestone:
         self.sides = sides
         self.runes = runes
 
-        self.mask = ""
+        self.mask: str | None = None
         self.nickname = None
 
     RUNESTONE_TYPE_DATA = {
@@ -244,7 +268,7 @@ class Runestone:
     def give_nickname(self):
         self.nickname = input(f"enter a nickname for your {self.info} for ease of use ")
 
-    # adds a runes to blank sides of the runestone, either taking the TYPE of rune it is eg. IsazRune, SowuloRune, or an instance of a rune subclass
+    # adds a runes to blank sides of the runestone, either taking the TYPE of rune it is eg. IsazRune, SowuloRune, or an instance of a rune subclass, eg x = IsazRune()
     def add_runes(self, runes: list[Rune] | list[typing.Callable]):
         for rune in runes:
             if isinstance(rune, Rune):
@@ -351,8 +375,8 @@ class Enemy:
 
 # subclass for chicken
 class Chicken(Enemy):
-    def __init__(self):
-        super().__init__("chicken", 10, 5)
+    def __init__(self, attack_mod=5, hp_mod=0):
+        super().__init__("chicken", 10 + hp_mod, attack_mod)
 
     # this is the chicken's attack pattern description, based off where it is in the pattern
     @property
@@ -408,17 +432,31 @@ class Player:
         self.current_hp = self.max_hp
 
 
+class Encounter:
+    def __init__(self) -> None:
+        pass
+
+
+class Battle(Encounter):
+    def __init__(self, enemy: Enemy, rewards: list) -> None:
+        super().__init__()
+
+        self.enemy = enemy
+        self.rewards = rewards
+
+
 # holds the key information needed for most things tp operate
 class WorldState:
     def __init__(self, player: Player, current_enemy: Enemy):
         self.player = player
         self.current_enemy = current_enemy
+        self.thrown_runes: RunestoneBag = RunestoneBag([])
 
 
 # lists of all of the types of things
 
-ALL_RUNES = [IsazRune, SowuloRune]
+ALL_RUNES = [IsazRune, SowuloRune, WynnRune]
 
-ALL_ENEMIES = [Chicken]
+NORMAL_ENEMIES = [Chicken]
 
 ALL_SPELLS = [ArcaneBolt, HealSpell]
