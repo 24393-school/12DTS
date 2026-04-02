@@ -1,3 +1,6 @@
+from word2number import w2n
+
+
 # function that takes asks for input of numbers seperated by commas, and returns a list of the numbers
 def get_numbers_from_input(
     prompt: str = "",
@@ -16,7 +19,7 @@ def get_numbers_from_input(
 
             numbers = user_input.split(",")
 
-            numbers = [int(n) for n in numbers if n.isdigit()]
+            numbers = [int(w2n.word_to_num(n)) for n in numbers]
 
             if choice_amount and len(numbers) > choice_amount:
                 raise ValueError("too many numbers")

@@ -1,0 +1,40 @@
+[bold yellow]WELCOME, RUNECASTER[/bold yellow]
+
+In this game, you will be journeying through a [red]dangerous[/red] land,
+with many [red]powerful foes[/red]
+To survive, you must use your [purple]RUNESTONES[/purple],
+each with their sides engraved with [purple]ARCANE RUNES[/purple]
+
+To wield the [purple]magic[/purple] of these runes, you must throw them to the sky,
+letting [green]luck[/green] determine your [red]fate[/red]
+
+Then, wielding the [purple]ARCANA[/purple] from you runes,
+you must [medium_purple]weave[/medium_purple] it into [purple]spells of power[/purple] to bypass your [red]foes[/red]
+
+
+
+This game is fully [bright_white]text-based[/bright_white],
+and when asked for input to choose anything,
+enter either enter [green]y[/green]/[red]n[/red],
+or the [bright_white]number[/bright_white] that came before the item which you are choosing (where appropriate)
+
+[bold red]NEVER[/bold red] enter any input when not asked for it (it can [red]screw[/red] with the terminal)
+Each turn, you'll throw several of your [purple]runes[/purple], to gain [purple]ARCANA[/purple]
+You can use this [purple]ARCANA[/purple] to cast spells,
+which are [bold purple]empowered[/ bold purple] if you have extra [purple]ARCANA
+ARCANA[/purple] is not conserved between turns, so use it [medium_purple]wisely[/medium_purple]
+
+After each [red]combat[/red], you will be able to:
+[purple]learn new spells[/purple],
+[gold1]Engrave new runes onto your runestones[/gold1],
+[green]Gain entirely new runestones[/green],
+or
+[medium_purple]increase the number of runestones you can throw each turn[/medium_purple]
+
+[bold green]May Njordnir's luck be with you[/bold green]
+
+
+[bold red]YOU'LL NEED IT[/bold red]
+
+
+press enter to continue
