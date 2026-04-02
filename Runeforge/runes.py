@@ -815,6 +815,7 @@ class Turkey(Enemy):
                 self.sequence_step = 0
 
 
+# the boss enemy
 class Goose(Enemy):
     def __init__(self, attack_mod=0, hp_mod=0):
         super().__init__("Gargantuan Goose", 55 + hp_mod, attack_mod)
@@ -842,6 +843,7 @@ class Goose(Enemy):
 
     def take_turn(self, world_state: WorldState):
         match self.sequence_step:
+            # basic attack
             case 0:
                 slprint(
                     "the goose rushes towards you, and lets losse a [red]mighty peck[/red]"
@@ -849,6 +851,7 @@ class Goose(Enemy):
                 self.attack(12, world_state)
                 self.sequence_step = 1
 
+            # does a random rune. In the future, I might add a subclass of runes for enemy runes that can be used
             case 1:
                 slprint(
                     "The goose honks, and with its [purple]arcane[/purple] power a runestone is thrown into the air..."
@@ -857,6 +860,7 @@ class Goose(Enemy):
                 rune_face = random.randint(0, 2)
 
                 match rune_face:
+                    # the equivilant of the heal/arcana choice rune
                     case 0:
                         slprint("the runestone lands on [green]ᚹ[/green]")
                         slprint("the rune [green]Wynn[/green]")
@@ -882,17 +886,19 @@ class Goose(Enemy):
                             slprint("the goose gains [purple]20 ARCANA[/purple]")
                             self.arcana += 20
 
+                    # a heal and arcana rune
                     case 1:
                         slprint("the runestone lands on [yellow]ᛊ[/yellow]")
                         slprint("the rune [yellow]Sōwulō[/yellow]")
                         slprint("the rune glows with [yellow]yellow[/yellow] power...")
                         slprint(
-                            f"heavenly light blesses the {self.name}... it gains [purple]10 ARCANA[/purple], and [green]heals 10 hp[/green]"
+                            f"heavenly light blesses the {self.name}... it gains [purple]5 ARCANA[/purple], and [green]heals 10 hp[/green]"
                         )
-                        self.arcana += 10
+                        self.arcana += 5
                         self.current_hp = min(self.current_hp + 10, self.max_hp)
                         slprint(f"it now has [green]{self.current_hp} hp[/green] left")
 
+                    # just gain arcana
                     case 2:
                         slprint("the runestone lands on [purple]ᚫ[/purple]")
                         slprint("the rune [purple]Æsc[/purple]")
@@ -902,6 +908,7 @@ class Goose(Enemy):
                         )
                         self.arcana += 5
 
+                # chooses a move to go next, depending on the arcana cost
                 if self.arcana >= 10:
                     self.sequence_step = 3
 
@@ -911,6 +918,7 @@ class Goose(Enemy):
                 else:
                     self.sequence_step = random.randint(0, 1)
 
+            # increases it attack bonus for 5 arcana
             case 2:
                 slprint(
                     f"the {self.name} honks its arcana into an [purple]enchantment[/purple] upon it's beak... its [red]attack has increased by 3[/red]"
@@ -919,6 +927,7 @@ class Goose(Enemy):
                 self.arcana = 0
                 self.sequence_step = 0
 
+            # does a strong attack that weakens the player
             case 3:
                 slprint(
                     f"the {self.name} honks its arcana into a mighty gust, which it flaps towards you, slamming into you with [red]immense force[/red]"
