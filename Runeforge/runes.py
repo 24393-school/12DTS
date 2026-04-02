@@ -98,7 +98,7 @@ class ArcaneBolt(Spell):
         damage = random.randint(5, 10) + (
             5 if empowered else 0
         )  # randomises damage, and boosts it if its empowered
-        world_state.current_enemy.injure(damage)
+        world_state.current_enemy.injure(damage, world_state)
 
         return empowered
 
@@ -181,7 +181,7 @@ class LightningSpell(Spell):
             blue_rune_count * 5, blue_rune_count * 7
         )  # randomises the damage, with extra for each blue rune
 
-        world_state.current_enemy.injure(damage)
+        world_state.current_enemy.injure(damage, world_state)
 
         if empowered:
             world_state.player.thor_wrath += (
@@ -407,7 +407,7 @@ class PeorthRune(Rune):
                         f"A spout of [orange]liquid fire[/orange] leaps from the runestone towards the enemy {world_state.current_enemy.name}, engulfing it in [orange]flame[/orange]..."
                     )
 
-                    world_state.current_enemy.injure(15)
+                    world_state.current_enemy.injure(15, world_state)
 
                 case chance if 0.4 < chance <= 0.5:
                     slprint(
@@ -622,7 +622,9 @@ class Runestone:
                 slprint(
                     "The blessing of [bold blue]Thor[/bold blue] imbues the rune with power, as [blue]lightning[/blue] arcs from it towards the enemy..."
                 )
-                world_state.current_enemy.injure(world_state.player.thor_wrath)
+                world_state.current_enemy.injure(
+                    world_state.player.thor_wrath, world_state
+                )
 
             # and activates it
             world_state.thrown_runes.append(face)
@@ -717,7 +719,13 @@ class Enemy:
         pass
 
     # this is called by other thing sto deal damage to the enemy
-    def injure(self, damage):
+    def injure(self, damage, world_state: WorldState):
+
+        if world_state.player.weakened:
+            slprint(
+                "you're [yellow4]weakened[/yellow4]! [yellow4]damage reduced[/yellow4]"
+            )
+            damage = int(damage * 0.75)
 
         slprint(f"[red]{damage} damage![/red]")
 
@@ -762,7 +770,7 @@ class Chicken(Enemy):
 
 
 # an elite enemy, which is stronger than the chicken
-class ColossalTurkey(Enemy):
+class Turkey(Enemy):
     def __init__(self, attack_mod=0, hp_mod=0) -> None:
         super().__init__("Colossal Turkey", 30 + hp_mod, attack_mod)
 
@@ -807,6 +815,123 @@ class ColossalTurkey(Enemy):
                 self.sequence_step = 0
 
 
+class Goose(Enemy):
+    def __init__(self, attack_mod=0, hp_mod=0):
+        super().__init__("Gargantuan Goose", 55 + hp_mod, attack_mod)
+        self.arcana = 0
+
+    @property
+    def action_foresight(self) -> str:
+        match self.sequence_step:
+            case 0:
+                return f"planning to attack for [red]{15 + self.attack_modifier} damage[/red]"
+
+            case 1:
+                return (
+                    "planning to throw one [medium_purple1]runestone[/medium_purple1]"
+                )
+
+            case 2:
+                return "planning to [purple]cast ARCANE PECK[/purple]"
+
+            case 3:
+                return "planning to [purple]cast MIGHTY GUST[/purple]"
+
+            case _:
+                return "doing nothing"
+
+    def take_turn(self, world_state: WorldState):
+        match self.sequence_step:
+            case 0:
+                slprint(
+                    "the goose rushes towards you, and lets losse a [red]mighty peck[/red]"
+                )
+                self.attack(12, world_state)
+                self.sequence_step = 1
+
+            case 1:
+                slprint(
+                    "The goose honks, and with its [purple]arcane[/purple] power a runestone is thrown into the air..."
+                )
+                time.sleep(0.5)
+                rune_face = random.randint(0, 2)
+
+                match rune_face:
+                    case 0:
+                        slprint("the runestone lands on [green]ᚹ[/green]")
+                        slprint("the rune [green]Wynn[/green]")
+                        slprint("the rune glows with [green]green[/green] power...")
+                        slprint("Vines burst from the earth in front of the goose")
+
+                        if self.current_hp <= self.max_hp / 3:
+                            slprint(
+                                "the vines bloom with [green]invigorating melons[/green], which the goose eats"
+                            )
+                            slprint(
+                                "the goose eats the apples, [green]healing 20 hp[/green]"
+                            )
+                            self.current_hp = min(self.current_hp + 20, self.max_hp)
+                            slprint(
+                                f"it now has [green]{self.current_hp} hp[/green] left"
+                            )
+
+                        else:
+                            slprint(
+                                "the vines blooom with [purple]invigorating lemons[/purple]"
+                            )
+                            slprint("the goose gains [purple]20 ARCANA[/purple]")
+                            self.arcana += 20
+
+                    case 1:
+                        slprint("the runestone lands on [yellow]ᛊ[/yellow]")
+                        slprint("the rune [yellow]Sōwulō[/yellow]")
+                        slprint("the rune glows with [yellow]yellow[/yellow] power...")
+                        slprint(
+                            f"heavenly light blesses the {self.name}... it gains [purple]10 ARCANA[/purple], and [green]heals 10 hp[/green]"
+                        )
+                        self.arcana += 10
+                        self.current_hp = min(self.current_hp + 10, self.max_hp)
+                        slprint(f"it now has [green]{self.current_hp} hp[/green] left")
+
+                    case 2:
+                        slprint("the runestone lands on [purple]ᚫ[/purple]")
+                        slprint("the rune [purple]Æsc[/purple]")
+                        slprint("the rune glows with [purple]yellow[/purple] power...")
+                        slprint(
+                            f"arcane power suffuses the {self.name}... it gains [purple]5 ARCANA[/purple]"
+                        )
+                        self.arcana += 5
+
+                if self.arcana >= 10:
+                    self.sequence_step = 3
+
+                elif 10 > self.sequence_step >= 5:
+                    self.sequence_step = 2
+
+                else:
+                    self.sequence_step = random.randint(0, 1)
+
+            case 2:
+                slprint(
+                    f"the {self.name} honks its arcana into an [purple]enchantment[/purple] upon it's beak... its [red]attack has increased by 3[/red]"
+                )
+                self.attack_modifier += 3
+                self.arcana = 0
+                self.sequence_step = 0
+
+            case 3:
+                slprint(
+                    f"the {self.name} honks its arcana into a mighty gust, which it flaps towards you, slamming into you with [red]immense force[/red]"
+                )
+                self.attack(30, world_state)
+                slprint(
+                    "you are [yellow4]destabilized[/yellow4]... you deal [yellow4]25% less damage next turn[/yellow4]"
+                )
+                world_state.player.weakened = True
+                self.arcana = 0
+                self.sequence_step = random.randint(0, 1)
+
+
 # The player character
 class Player:
     def __init__(
@@ -829,6 +954,9 @@ class Player:
         self.temp_arcana_income = 0  # temporary stat modifications
         self.temp_runestone_cap = 0
         self.thor_wrath = 0  # this is specificly for the wrath of thor spell
+        self.weakened = (
+            False  # this is a negative status effect that reduces the player's damage
+        )
 
     # checks if all of the player's runes are full
     @property
@@ -863,7 +991,7 @@ class Battle(Encounter):
 
     @property
     def info(self) -> str:
-        return f"{'An elite battle' if self.difficulty == 'elite' else 'A battle'} against a {self.enemy.name}"
+        return f"{'An elite battle' if self.difficulty == 'elite' else 'A boss battle' if self.difficulty == 'boss' else 'A battle'} against a {self.enemy.name}"
 
 
 # holds the key information needed for most things tp operate
@@ -882,7 +1010,7 @@ NORMAL_RUNES = [IsazRune, SowuloRune, WynnRune, PeorthRune]
 STARTER_RUNES = [AscRune, FehuRune]
 
 NORMAL_ENEMIES = [Chicken]
-ELITE_ENEMIES = [ColossalTurkey]
+ELITE_ENEMIES = [Turkey]
 
 NORMAL_SPELLS = [HealSpell, LightningSpell]
 STARTER_SPELLS = [ArcaneBolt]

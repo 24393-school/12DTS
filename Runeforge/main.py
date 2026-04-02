@@ -335,6 +335,7 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy, rewards: list):
                 world_state.player.runestone_bag.append(runestone)
 
             world_state.thrown_runestones = runes.RunestoneBag([])
+            world_state.player.weakened = False
 
             # sets the win declaration if anyone has died
             if world_state.current_enemy.current_hp <= 0:
@@ -400,7 +401,7 @@ def create_encounter(
     else:
         encounter_type = set_encounter
 
-    if encounter_type == "battle" or "elite":
+    if encounter_type == "battle" or encounter_type == "elite":
         enemy = random.choice(
             runes.NORMAL_ENEMIES if encounter_type == "battle" else runes.ELITE_ENEMIES
         )(
@@ -498,6 +499,9 @@ def create_encounter(
             enemy, reward_list, "normal" if encounter_type == "battle" else "elite"
         )  # returns a battle
 
+    elif encounter_type == "boss":
+        return runes.Battle(runes.Goose(), [runes.Runestone("crystal", 1, [])], "boss")
+
     # fall through, just makes a blank encounter
     return runes.Encounter()
 
@@ -554,10 +558,15 @@ if __name__ == "__main__":
     game_running = True
     while game_running:
         # creates one elit eencounter, and one normal encounter to choose from
-        encounter_choices = [
-            create_encounter(world, "battle"),
-            create_encounter(world, "elite"),
-        ]
+
+        if win_count != 4:
+            encounter_choices = [
+                create_encounter(world, "battle"),
+                create_encounter(world, "elite"),
+            ]
+
+        else:
+            encounter_choices = [create_encounter(world, "boss")]
 
         # gets input for which encounter to do
         slprint("choose an encounter:")
@@ -578,11 +587,18 @@ if __name__ == "__main__":
                 world, encounter_choice.enemy, encounter_choice.rewards
             )
 
-            if combat_result == "win":
+            if combat_result == "win" and encounter_choice.difficulty != "boss":
                 win_count += 1
 
+            elif combat_result == "win" and encounter_choice.difficulty == "boss":
+                slprint(
+                    "[bold green] YOU WIN. YOU MAY CONTUNE TO FIGHT ENDLESSLY IF YOU WISH. OTHERWISE, THE GAME ENDS HERE"
+                )
+                win_count += 1
+                time.sleep(2)
+
             # outro if the player dies
-            if combat_result == "loss":
+            elif combat_result == "loss":
                 slprint("these were your runestones")
                 world.player.runestone_bag.explain()
                 slprint("these were your spells")
