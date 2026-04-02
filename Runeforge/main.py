@@ -135,6 +135,8 @@ def battle(world_state: runes.WorldState, enemy: runes.Enemy, rewards: list):
 
     # resets temp values that need reseting before combat
     world_state.player.temp_runestone_cap = 0
+    world_state.thrown_runestones = runes.RunestoneBag([])
+    world_state.thrown_runes = []
 
     # to count how many rounds
     turn = 0
